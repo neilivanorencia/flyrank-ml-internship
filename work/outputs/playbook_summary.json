@@ -1,0 +1,207 @@
+{
+  "live_month": "2026-06",
+  "backtest_month": "2026-05",
+  "alpha": 0.039,
+  "live_queue": {
+    "pages_scored": 201748,
+    "pages_in_queue": 6509,
+    "review_list": 50,
+    "review_list_clients": 9,
+    "review_list_actions": {
+      "Rewrite the title and description": 15,
+      "Improve the content": 13,
+      "Check the search results page first": 11,
+      "Review site-wide": 9,
+      "Check indexing and rankings first": 1,
+      "Wait and re-check next month": 1
+    },
+    "review_list_confidence": {
+      "High": 50
+    }
+  },
+  "backtest": {
+    "pages_in_queue": 8132,
+    "review_list_real_shortfall_again": 0.32,
+    "review_list_optimized_by_flyrank": 33,
+    "review_list_real_shortfall_again_pages_flyrank_left_alone": 0.9412,
+    "review_list_share_of_next_month_missed_clicks": 0.0922,
+    "tradeoff": [
+      {
+        "List": "Top 20",
+        "Pages": 20,
+        "Optimized by FlyRank": 14,
+        "Vanished from search": 0,
+        "Real shortfall again, all picks": 0.3,
+        "Real shortfall again, pages FlyRank left alone": 1.0,
+        "Share of June's missed clicks": 0.0507,
+        "Clients": 6
+      },
+      {
+        "List": "Top 50",
+        "Pages": 50,
+        "Optimized by FlyRank": 32,
+        "Vanished from search": 0,
+        "Real shortfall again, all picks": 0.34,
+        "Real shortfall again, pages FlyRank left alone": 0.9444,
+        "Share of June's missed clicks": 0.1248,
+        "Clients": 11
+      },
+      {
+        "List": "Top 100",
+        "Pages": 100,
+        "Optimized by FlyRank": 62,
+        "Vanished from search": 0,
+        "Real shortfall again, all picks": 0.34,
+        "Real shortfall again, pages FlyRank left alone": 0.8947,
+        "Share of June's missed clicks": 0.1594,
+        "Clients": 11
+      },
+      {
+        "List": "Top 200",
+        "Pages": 200,
+        "Optimized by FlyRank": 125,
+        "Vanished from search": 0,
+        "Real shortfall again, all picks": 0.32,
+        "Real shortfall again, pages FlyRank left alone": 0.8533,
+        "Share of June's missed clicks": 0.2143,
+        "Clients": 15
+      },
+      {
+        "List": "Top 500",
+        "Pages": 500,
+        "Optimized by FlyRank": 306,
+        "Vanished from search": 0,
+        "Real shortfall again, all picks": 0.314,
+        "Real shortfall again, pages FlyRank left alone": 0.8093,
+        "Share of June's missed clicks": 0.3032,
+        "Clients": 19
+      },
+      {
+        "List": "Top 50, at most 10 per client (chosen)",
+        "Pages": 50,
+        "Optimized by FlyRank": 33,
+        "Vanished from search": 0,
+        "Real shortfall again, all picks": 0.32,
+        "Real shortfall again, pages FlyRank left alone": 0.9412,
+        "Share of June's missed clicks": 0.0922,
+        "Clients": 11
+      }
+    ]
+  },
+  "confidence_calibration": [
+    {
+      "Scope": "Whole queue",
+      "Confidence": "High",
+      "Pages": 2267,
+      "Model's average probability": "77%",
+      "Real shortfall again, all pages": "25%",
+      "Pages FlyRank left alone": 919,
+      "Real shortfall again, pages FlyRank left alone": "62%"
+    },
+    {
+      "Scope": "Whole queue",
+      "Confidence": "Medium",
+      "Pages": 3453,
+      "Model's average probability": "43%",
+      "Real shortfall again, all pages": "14%",
+      "Pages FlyRank left alone": 1482,
+      "Real shortfall again, pages FlyRank left alone": "33%"
+    },
+    {
+      "Scope": "Whole queue",
+      "Confidence": "Low",
+      "Pages": 2412,
+      "Model's average probability": "21%",
+      "Real shortfall again, all pages": "9%",
+      "Pages FlyRank left alone": 1359,
+      "Real shortfall again, pages FlyRank left alone": "16%"
+    },
+    {
+      "Scope": "Review list",
+      "Confidence": "High",
+      "Pages": 50,
+      "Model's average probability": "96%",
+      "Real shortfall again, all pages": "32%",
+      "Pages FlyRank left alone": 17,
+      "Real shortfall again, pages FlyRank left alone": "94%"
+    },
+    {
+      "Scope": "Review list",
+      "Confidence": "Medium",
+      "Pages": 0,
+      "Model's average probability": "n/a",
+      "Real shortfall again, all pages": "n/a",
+      "Pages FlyRank left alone": 0,
+      "Real shortfall again, pages FlyRank left alone": "n/a"
+    },
+    {
+      "Scope": "Review list",
+      "Confidence": "Low",
+      "Pages": 0,
+      "Model's average probability": "n/a",
+      "Real shortfall again, all pages": "n/a",
+      "Pages FlyRank left alone": 0,
+      "Real shortfall again, pages FlyRank left alone": "n/a"
+    }
+  ],
+  "monitoring": [
+    {
+      "Month pair": "2026-02 \u2192 2026-03",
+      "Review list hit rate": 0.68,
+      "Base rate": 0.0736,
+      "\u03b1": 0.0503,
+      "PSI, impressions": 0.0,
+      "PSI, position": 0.0,
+      "Misses that lost visibility": 0.3125
+    },
+    {
+      "Month pair": "2026-03 \u2192 2026-04",
+      "Review list hit rate": 0.8,
+      "Base rate": 0.0644,
+      "\u03b1": 0.0321,
+      "PSI, impressions": 0.0213,
+      "PSI, position": 0.0523,
+      "Misses that lost visibility": 0.4
+    },
+    {
+      "Month pair": "2026-04 \u2192 2026-05",
+      "Review list hit rate": 0.84,
+      "Base rate": 0.0414,
+      "\u03b1": 0.0385,
+      "PSI, impressions": 0.0376,
+      "PSI, position": 0.1479,
+      "Misses that lost visibility": 0.25
+    },
+    {
+      "Month pair": "2026-05 \u2192 2026-06",
+      "Review list hit rate": 0.88,
+      "Base rate": 0.0217,
+      "\u03b1": 0.0481,
+      "PSI, impressions": 0.2045,
+      "PSI, position": 0.5611,
+      "Misses that lost visibility": 0.1667
+    },
+    {
+      "Month pair": "2026-06 (live, no outcome yet)",
+      "Review list hit rate": null,
+      "Base rate": null,
+      "\u03b1": null,
+      "PSI, impressions": 0.0753,
+      "PSI, position": 0.2987,
+      "Misses that lost visibility": null
+    }
+  ],
+  "triggers": {
+    "hit_rate_below": 0.7,
+    "base_rate_range": [
+      0.02,
+      0.08
+    ],
+    "alpha_range": [
+      0.025,
+      0.055
+    ],
+    "psi_above": 0.25,
+    "lost_visibility_share_above": 0.5
+  }
+}

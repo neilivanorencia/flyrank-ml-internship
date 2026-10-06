@@ -1,0 +1,213 @@
+/* Fixes the cascade order up front, so a later layer always beats an earlier one whatever the file order is. */
+@layer reset, base, components, utilities;
+
+/* A small reset, where sizes include borders, default margins are gone, and form controls use the page font. */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  /* Media becomes a block that never overflows its container, which also removes the gap under inline images. */
+  img,
+  svg,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  /* Long unbroken words wrap instead of widening the page. */
+  p,
+  h1,
+  h2,
+  h3,
+  h4 {
+    overflow-wrap: break-word;
+  }
+}
+
+/* Page-level defaults for the document, type, links, and keyboard focus. */
+@layer base {
+  html {
+    /* Smooth in-page jumps without JavaScript, which `lenis.css` switches off when Lenis takes over. */
+    scroll-behavior: smooth;
+    overscroll-behavior: none;
+
+    /* Leaves room above and below an anchor target so it does not land flush against the window edge. */
+    scroll-padding-block: var(--space-8);
+    scroll-padding-block-end: 6rem;
+
+    /* The dark band color shows wherever the page does not cover the window, such as when the browser overscrolls. */
+    background-color: var(--night);
+    text-size-adjust: 100%;
+  }
+
+  /* Locks the page behind an open dialog, so scrolling inside the dialog does not move the page. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: 400;
+    line-height: var(--leading-body);
+    color: var(--ink-body);
+    background-color: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+  }
+
+  h1 {
+    font-size: var(--text-hero);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-size: var(--text-h2);
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    font-size: var(--text-h3);
+  }
+
+  a {
+    color: var(--accent-ink);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  /* A rounded ring replaces the default outline for keyboard focus, in the page and accent colors so it shows on every background. */
+  :focus-visible {
+    outline: none;
+    border-radius: var(--radius-chip);
+    box-shadow: var(--focus-ring);
+  }
+
+  /* People who reduce motion get near-instant transitions and animations, kept above zero so their end events still fire. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms;
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+}
+
+/* Starting states for the scroll animations in `scripts/reveal.ts`. */
+@layer base {
+  /* Vertical bars grow up from their base and horizontal bars and lines grow out from their left edge. */
+  [data-grow="y"] {
+    transform-origin: bottom;
+  }
+
+  [data-grow="x"],
+  [data-draw] {
+    transform-origin: left;
+  }
+
+  /* Equal-width digits stop a counting number from jittering as it changes. */
+  [data-count] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Elements start hidden only when JavaScript is running and motion is allowed, so every other visitor sees the content at once. */
+  @media (prefers-reduced-motion: no-preference) {
+    html.js [data-reveal] > *,
+    html.js [data-fade] {
+      opacity: 0;
+    }
+
+    html.js [data-grow="y"] {
+      transform: scaleY(0);
+    }
+
+    html.js [data-grow="x"],
+    html.js [data-draw] {
+      transform: scaleX(0);
+    }
+  }
+}
+
+/* Small layout helpers for the page structure. */
+@layer utilities {
+  /* The centered text column, which keeps a gutter on both sides on small screens. */
+  .column {
+    width: min(100% - 2 * var(--gutter), var(--column));
+    margin-inline: auto;
+  }
+
+  /* A wider centered container, used by the navigation and the footer. */
+  .wide {
+    width: min(100% - 2 * var(--gutter), var(--wide));
+    margin-inline: auto;
+  }
+
+  .section {
+    padding-block: var(--section-padding);
+    background-color: var(--bg);
+  }
+
+  .section--alt {
+    background-color: var(--bg-alt);
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--stack-gap);
+  }
+
+  /* Two plain sections in a row share a background, so the second one needs less top padding to avoid a double gap. */
+  .section:not(.section--alt) + .section:not(.section--alt) {
+    padding-block-start: var(--space-4);
+  }
+
+  /* Hides content from sight but keeps it for assistive tech, without the layout side effects of `display: none`. */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+    clip-path: inset(50%);
+  }
+}

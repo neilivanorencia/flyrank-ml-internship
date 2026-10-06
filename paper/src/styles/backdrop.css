@@ -1,0 +1,74 @@
+/* Decorative section backgrounds, a glowing grid or a dotted field, drawn behind the content with pseudo-elements. */
+@layer utilities {
+  /* Isolation makes the section its own stacking context, so the layers at `z-index: -1` stay behind its content without sinking behind the page. */
+  .backdrop {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* Both layers fill the section, sit behind the content, and let clicks pass through. */
+  .backdrop::before,
+  .backdrop::after {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: "";
+  }
+
+  /* The grid variant puts a soft mint glow at `--orb-position`, which defaults to the upper right. */
+  .backdrop--grid::before {
+    background: radial-gradient(
+      ellipse 60% 70% at var(--orb-position, 75% 30%),
+      #54e39935,
+      #54e3990f 45%,
+      transparent 75%
+    );
+  }
+
+  /* Thin grid lines that fade out away from the glow, because the mask is centered on the same point. */
+  .backdrop--grid::after {
+    background-image:
+      linear-gradient(to right, #54e3991f 1px, transparent 1px),
+      linear-gradient(to bottom, #54e3991f 1px, transparent 1px);
+    background-size: 2rem 2rem;
+    mask-image: radial-gradient(
+      ellipse 75% 85% at var(--orb-position, 75% 30%),
+      #000,
+      transparent 80%
+    );
+  }
+
+  /* The dots variant covers the side margins and fades at the top and bottom, leaving the text column clear. */
+  .backdrop--dots::after {
+    /* Half the content column plus a margin, which is how far each side of the center the dots stay hidden. */
+    --clear: calc(var(--column) / 2 + var(--space-6));
+
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in srgb, var(--ink) 24%, transparent) 1px,
+      transparent 0
+    );
+    background-size: 1.25rem 1.25rem;
+    mask-image:
+      linear-gradient(
+        to right,
+        #000,
+        #0000 calc(50% - var(--clear)),
+        #0000 calc(50% + var(--clear)),
+        #000
+      ),
+      linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+
+    /* Keeps a dot only where both masks allow it, so the center is empty and the top and bottom edges fade out. */
+    mask-composite: intersect;
+  }
+
+  /* The decoration is dropped when printing, so the page stays plain on paper. */
+  @media print {
+    .backdrop::before,
+    .backdrop::after {
+      display: none;
+    }
+  }
+}

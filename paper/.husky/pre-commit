@@ -1,0 +1,1 @@
+cd paper && pnpm exec lint-staged

@@ -1,0 +1,41 @@
+/* stylelint-disable selector-class-pattern -- class names are set by Lenis */
+
+/* Styles for the Lenis smooth scroll library, which match the ones the library recommends except for the `lenis-smooth` rule below. */
+
+/* Lets the document grow with its content instead of being fixed to the window height. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+/* Turns off the browser's own smooth scrolling from `base.css` while Lenis is active, so the two do not fight. */
+html.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+/* Clips the page while Lenis is stopped, unless the automatic toggle manages that. */
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+/* Areas that opt out of Lenis, so their own scrolling does not chain into the page. */
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+
+/* Stops embedded frames from capturing the wheel and touch events that Lenis needs. */
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* A one millisecond transition on `overflow` lets the library's automatic toggle react when the page overflow changes. */
+.lenis.lenis-autoToggle {
+  transition-duration: 1ms;
+  transition-property: overflow;
+  transition-behavior: allow-discrete;
+}
+/* stylelint-enable selector-class-pattern */

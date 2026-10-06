@@ -1,0 +1,68 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // The rule sets to load, covering core JavaScript, TypeScript, imports, promises, accessibility, and Node.
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "jsx-a11y", "node"],
+  // Nearly every category is an error, so warnings never pile up, and only the opinionated and unstable ones are off.
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error",
+    "style": "error",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  // Type aware rules need the `oxlint-tsgolint` package, which supplies the type information.
+  "options": {
+    "typeAware": true
+  },
+  // Rules changed from their category defaults.
+  "rules": {
+    // One variable per declaration.
+    "eslint/one-var": ["error", "never"],
+    // Numbers other than -1, 0, and 1 need a named constant, which is why the code defines constants such as `GAP_PX` and `REVEAL_S`.
+    "eslint/no-magic-numbers": [
+      "error",
+      { "ignore": [-1, 0, 1], "ignoreArrayIndexes": true, "ignoreDefaultValues": true }
+    ],
+    // Comments start with a capital letter, except the follow-on lines of a run of comments.
+    "eslint/capitalized-comments": ["error", "always", { "ignoreConsecutiveComments": true }],
+    // Imports that only run for their side effects are allowed for stylesheets and the page scripts.
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css", "@/scripts/*"] }],
+    // Named exports are normal in this code base.
+    "import/no-named-export": "off",
+    // `null` is allowed because DOM calls and the parsed data return it.
+    "unicorn/no-null": "off",
+    // A type import may sit beside a value import from the same module.
+    "eslint/no-duplicate-imports": ["error", { "allowSeparateTypeImports": true }],
+    // The members inside one import are sorted, but the order of the import lines is left to the formatter.
+    "eslint/sort-imports": ["error", { "ignoreDeclarationSort": true }]
+  },
+  // Rules that change for specific folders.
+  "overrides": [
+    {
+      // The browser scripts pass DOM elements around, which cannot be typed as readonly.
+      "files": ["src/scripts/**"],
+      "rules": {
+        "typescript/prefer-readonly-parameter-types": "off"
+      }
+    },
+    {
+      // The page and the sections compose many components, so they get a higher import limit.
+      "files": ["src/pages/**", "src/sections/**"],
+      "rules": {
+        "import/max-dependencies": ["error", { "max": 16 }]
+      }
+    },
+    {
+      // Build scripts and config files run in Node, so Node modules and synchronous file calls are fine there.
+      "files": ["scripts/**", "*.config.js", "*.config.mjs"],
+      "rules": {
+        "import/no-nodejs-modules": "off",
+        "node/no-sync": "off"
+      }
+    }
+  ],
+  // Build output, dependencies, and static assets are not source code.
+  "ignorePatterns": ["dist/**", ".astro/**", "node_modules/**", "public/**"]
+}

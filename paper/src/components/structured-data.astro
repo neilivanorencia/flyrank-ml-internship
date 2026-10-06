@@ -1,0 +1,68 @@
+---
+/**
+ * Adds the paper's schema.org metadata to the page as a JSON-LD script, which search engines read for rich results.
+ * The script is inline data and not executable code, so the content security policy does not need a hash for it.
+ */
+
+import { FLYRANK_URL, GITHUB_PROFILE_URL, LINKEDIN_URL } from "@/lib/links";
+
+/** The page details that the structured data repeats. */
+interface Props {
+  description: string;
+  headline: string;
+  /** The share image with its alt text, size, and absolute link. */
+  image: { alt: string; height: number; url: URL; width: number };
+  /** The absolute link to the PDF version of the report. */
+  pdfUrl: URL;
+  title: string;
+  /** The absolute canonical link to this page. */
+  url: URL;
+}
+
+const { description, headline, image, pdfUrl, title, url } = Astro.props;
+
+/** The `ScholarlyArticle` record, with the author, the PDF, the share image, and the source dataset. */
+const article = {
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  author: {
+    "@type": "Person",
+    name: "Neil Ivan Orencia",
+    sameAs: [LINKEDIN_URL, GITHUB_PROFILE_URL],
+    url: GITHUB_PROFILE_URL,
+  },
+  datePublished: "2026-10",
+  description,
+  encoding: {
+    "@type": "MediaObject",
+    contentUrl: pdfUrl.href,
+    encodingFormat: "application/pdf",
+    name: "Full report (PDF)",
+  },
+  headline,
+  image: {
+    "@type": "ImageObject",
+    caption: image.alt,
+    height: image.height,
+    url: image.url.href,
+    width: image.width,
+  },
+  inLanguage: "en",
+  isAccessibleForFree: true,
+  isBasedOn: {
+    "@type": "Dataset",
+    creator: { "@type": "Organization", name: "FlyRank", url: FLYRANK_URL },
+    description:
+      "Daily Google Search rows, February to June 2026, pseudonymized before release, provided by FlyRank for the ML Internship.",
+    name: "FlyRank ML Internship warehouse, release v20260703",
+  },
+  mainEntityOfPage: url.href,
+  name: title,
+  url: url.href,
+};
+
+/** The article as JSON text, with each `<` replaced before it is inlined into a script tag. */
+const json = JSON.stringify(article).replaceAll("<", String.raw`<`);
+---
+
+<script type="application/ld+json" set:html={json} is:inline></script>

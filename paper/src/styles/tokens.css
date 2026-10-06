@@ -1,0 +1,166 @@
+/* The design tokens, with the light theme as the default and the dark theme overriding them further down. */
+:root {
+  /* Tells the browser to draw its own controls and scrollbars in light colors. */
+  color-scheme: light;
+
+  --bg: #f8faf9;
+  --bg-alt: #eef3f0;
+  --surface: #fff;
+  --ink: #06191b;
+  --ink-body: #33424a;
+  --ink-2: #5f6b72;
+  --line: #d9e0de;
+
+  /* Brand */
+  --accent: #54e399;
+  --accent-ink: #0a5c38;
+  --accent-wash: #eafbf1;
+  --mint-soft: #a7efc8;
+  --coral: #ff8a5b;
+
+  /* Dark bands, the hero and the close, keep these values in both themes */
+  --night: #06191b;
+  --night-raised: #1a2c2e;
+  --night-line: #2e4e4a;
+  --on-night: #f8faf9;
+  --on-night-2: #9eadb3;
+  --night-mint-wash: #54e3991f;
+  --night-mint-line: #54e39966;
+  --coral-soft: #ffb08f;
+  --coral-wash: #ff8a5b1f;
+  --coral-line: #ff8a5b66;
+
+  /* Data: model = data-a, rule and cutoffs = data-b */
+  --data-a: #1a7a4a;
+  --data-b: #c2410c;
+  --data-c: #4f73ff;
+
+  /* The text color to use on top of a `--data-a` fill. */
+  --on-data-a: #fff;
+
+  /* Bands */
+  --band-bg: #06191b;
+  --mint-band-bg: #5cdaa4;
+  --mint-band-glow: #c9f7deb3;
+  --band-ink: #06191b;
+  --band-ink-2: #0a3335;
+  --band-line: #06191b2e;
+  --band-model: #06191b;
+  --band-rule: #b23a0b;
+  --band-empty: #06191b1a;
+
+  /* Type families, where the font variables come from Astro's fonts config */
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Type scale: desktop sizes from bi8Au, scaling down fluidly to the 390 px mobile design */
+  --text-hero: clamp(2rem, 1.35rem + 2.6vw, 3.375rem);
+  --text-h2: clamp(1.625rem, 1.2rem + 1.8vw, 2.75rem);
+  --text-band: clamp(1.625rem, 1.25rem + 1.6vw, 2.5rem);
+  --text-number: clamp(1.5rem, 1.25rem + 1vw, 2.25rem);
+  --text-statement: clamp(1.0625rem, 0.9rem + 0.7vw, 1.5rem);
+  --text-h3: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  --text-lead: clamp(1.0625rem, 0.95rem + 0.5vw, 1.375rem);
+  --text-figure-title: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
+  --text-body: clamp(1rem, 0.94rem + 0.25vw, 1.1875rem);
+  --text-caption-title: 1.125rem;
+  --text-label: clamp(0.875rem, 0.84rem + 0.15vw, 0.9375rem);
+  --text-small: 0.8125rem;
+  --text-mono: 0.75rem;
+  --leading-tight: 1.1;
+  --leading-body: 1.6;
+
+  /* Spacing on a 4 px base */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --section-padding: clamp(4.5rem, 3rem + 6vw, 7.5rem);
+
+  /* Layout */
+
+  /* The Pen design's content column is 800px: text and charts share it. */
+  --column: 50rem;
+  --wide: 80rem;
+  --stack-gap: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  --gutter: clamp(1rem, 0.5rem + 2vw, 2rem);
+
+  /* Radii: chips 10, small cards 16, cards 22 to 26, and pills */
+  --radius-chip: 0.625rem;
+  --radius-small: 1rem;
+  --radius-card: 1.375rem;
+  --radius-card-large: 1.625rem;
+  --radius-pill: 999px;
+
+  /* Light theme shadows are tinted with forest instead of pure black */
+  --shadow-card: 0 1px 3px #06191b0d, 0 10px 34px #06191b17;
+  --shadow-float: 0 6px 20px #06191b26;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent-ink);
+}
+
+/* The dark theme for visitors whose system prefers dark, unless they chose light with the toggle, and the values must match the explicit dark block below. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #0c1b1b;
+    --bg-alt: #121d24;
+    --surface: #1a2c2e;
+    --ink: #eef3f0;
+    --ink-body: #c9d2cf;
+    --ink-2: #9eadb3;
+    --line: #2e4e4a;
+    --accent-ink: #54e399;
+    --accent-wash: #54e3991f;
+    --data-a: #54e399;
+    --data-b: #ff8a5b;
+    --data-c: #7d97ff;
+    --on-data-a: #06191b;
+    --band-bg: #11262a;
+    --mint-band-bg: #11262a;
+    --mint-band-glow: #54e3991a;
+    --band-ink: #f8faf9;
+    --band-ink-2: #9eadb3;
+    --band-line: #2e4e4a;
+    --band-model: #54e399;
+    --band-rule: #ff8a5b;
+    --band-empty: #ffffff14;
+    --shadow-card: 0 1px 3px #0000004d, 0 10px 34px #00000059;
+  }
+}
+
+/* The dark theme for visitors who chose dark with the toggle, which is a copy of the system dark block above because CSS cannot share one rule between a media query and an attribute. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0c1b1b;
+  --bg-alt: #121d24;
+  --surface: #1a2c2e;
+  --ink: #eef3f0;
+  --ink-body: #c9d2cf;
+  --ink-2: #9eadb3;
+  --line: #2e4e4a;
+  --accent-ink: #54e399;
+  --accent-wash: #54e3991f;
+  --data-a: #54e399;
+  --data-b: #ff8a5b;
+  --data-c: #7d97ff;
+  --on-data-a: #06191b;
+  --band-bg: #11262a;
+  --mint-band-bg: #11262a;
+  --mint-band-glow: #54e3991a;
+  --band-ink: #f8faf9;
+  --band-ink-2: #9eadb3;
+  --band-line: #2e4e4a;
+  --band-model: #54e399;
+  --band-rule: #ff8a5b;
+  --band-empty: #ffffff14;
+  --shadow-card: 0 1px 3px #0000004d, 0 10px 34px #00000059;
+}

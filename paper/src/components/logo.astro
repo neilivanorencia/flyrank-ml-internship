@@ -1,0 +1,33 @@
+---
+/**
+ * The logo mark, drawn as inline SVG in the accent color.
+ * It is decorative, so it is hidden from assistive tech and the text next to it names the brand.
+ */
+
+import LogoMark from "@/assets/logo.svg";
+
+/** The options that choose how the mark is drawn. */
+interface Props {
+  /** Draws the mark at a smaller size, for tight places such as the footer. */
+  small?: boolean;
+}
+
+const { small = false } = Astro.props;
+---
+
+<LogoMark class:list={["logo", { "logo--small": small }]} aria-hidden="true" focusable="false" />
+
+<style>
+  .logo {
+    /* Keeps the mark from shrinking when the row it sits in gets tight. */
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--accent);
+  }
+
+  .logo--small {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+</style>

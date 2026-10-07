@@ -1,0 +1,183 @@
+---
+/**
+ * The page footer with the brand, the author byline, and links to the author's profiles.
+ */
+
+import GithubIcon from "@phosphor-icons/core/assets/regular/github-logo.svg";
+import LinkedinIcon from "@phosphor-icons/core/assets/regular/linkedin-logo.svg";
+
+import Logo from "@/components/logo.astro";
+import { GITHUB_PROFILE_URL, LINKEDIN_URL } from "@/lib/links";
+
+/** The author's profile links, each with the icon and name shown on its button. */
+const profiles = [
+  { href: LINKEDIN_URL, icon: LinkedinIcon, label: "LinkedIn" },
+  { href: GITHUB_PROFILE_URL, icon: GithubIcon, label: "GitHub" },
+] as const;
+---
+
+{/* The footer sits on the dark band and shows the brand, then the byline and profile links. */}
+<footer class="site-footer">
+  <div class="site-footer__inner wide">
+    <p class="site-footer__brand">
+      <Logo small />
+      FlyRank Internship
+    </p>
+    <div class="site-footer__author">
+      <p class="site-footer__byline">Neil Ivan Orencia, FlyRank ML Internship 2026</p>
+      <ul class="site-footer__profiles">
+        {profiles.map((profile) => (
+          <li>
+            {/* The `me` link relation marks these profiles as belonging to the page's author. */}
+            <a
+              class="site-footer__profile"
+              href={profile.href}
+              target="_blank"
+              rel="me noopener noreferrer"
+              title={profile.label}
+            >
+              <profile.icon class="site-footer__profile-icon" aria-hidden="true" />
+              <span class="site-footer__label">{profile.label}</span>
+              <span class="visually-hidden">(opens in a new tab)</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding-block-end: var(--space-6);
+    background-color: var(--band-bg);
+    border-block-start: 1px solid var(--night-line);
+  }
+
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    align-items: center;
+    justify-content: space-between;
+    padding-block-start: var(--space-5);
+  }
+
+  .site-footer__brand {
+    display: inline-flex;
+    gap: var(--space-3);
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--on-night);
+  }
+
+  .site-footer__author {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    align-items: center;
+  }
+
+  .site-footer__byline {
+    font-size: 0.8125rem;
+    color: var(--on-night-2);
+  }
+
+  .site-footer__profiles {
+    display: flex;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .site-footer__profile {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 var(--space-4);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--on-night);
+    text-decoration: none;
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-pill);
+    transition:
+      background-color 160ms ease-out,
+      border-color 160ms ease-out,
+      color 160ms ease-out;
+
+    &:hover {
+      color: var(--accent);
+      background-color: var(--night-mint-wash);
+      border-color: var(--accent);
+    }
+  }
+
+  .site-footer__profile-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Wide layout: brand, byline, and profiles share one three-column row with the byline centered. */
+  @media (width >= 40rem) {
+    .site-footer__inner {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: var(--space-4);
+    }
+
+    /* Removes the author wrapper's own box so the byline and the profiles become columns of the footer grid. */
+    .site-footer__author {
+      display: contents;
+    }
+
+    .site-footer__byline {
+      text-align: center;
+    }
+
+    .site-footer__profiles {
+      justify-self: end;
+    }
+  }
+
+  /* Mid widths shrink the profile links to round icon buttons to save room. */
+  @media (width >= 40rem) and (width < 64rem) {
+    .site-footer__profile {
+      justify-content: center;
+      width: 2.75rem;
+      padding: 0;
+    }
+
+    .site-footer__profile-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    /* Hides the label text visually but keeps it for assistive tech, because the buttons shrink to icons at this width. */
+    .site-footer__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+  }
+
+  @media (width < 40rem) {
+    .site-footer__inner,
+    .site-footer__author {
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .site-footer__profiles {
+      justify-content: center;
+    }
+  }
+</style>

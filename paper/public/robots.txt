@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://neilivanorencia.github.io/flyrank-ml-internship/sitemap.xml

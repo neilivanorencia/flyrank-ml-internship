@@ -1,0 +1,134 @@
+---
+/**
+ * The HTML shell for every page, with the head metadata, the social card tags, the structured data, the fonts, and the theme setup.
+ *
+ * Page content goes in the default slot, and the global scripts load once at the end of the body.
+ */
+
+import { Font } from "astro:assets";
+
+import StructuredData from "@/components/structured-data.astro";
+import { LINKEDIN_URL, PDF_URL, withBase } from "@/lib/links";
+import themeInit from "@/scripts/theme-init.js?raw";
+import "@/styles/tokens.css";
+import "@/styles/base.css";
+import "@/styles/backdrop.css";
+import "@/styles/lenis.css";
+
+/** The page text that the head metadata repeats. */
+interface Props {
+  /** The summary used for search results, social cards, and the structured data. */
+  description: string;
+  /** The article headline for the structured data, which can differ from the page title. */
+  headline: string;
+  /** The page title used for the tab, the social cards, and the structured data. */
+  title: string;
+}
+
+const { description, headline, title } = Astro.props;
+/** The absolute address of this page, because search engines and social cards need full links. */
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+/** The absolute address of the PDF report. */
+const pdfUrl = new URL(PDF_URL, Astro.site);
+
+/** The share card width in pixels, which `check-build.ts` compares against the real image. */
+const OG_IMAGE_WIDTH = 1200;
+/** The share card height in pixels, which `check-build.ts` compares against the real image. */
+const OG_IMAGE_HEIGHT = 630;
+/** The share card with its alt text, size, and absolute link, used by the social tags and the structured data. */
+const ogImage = {
+  alt: 'FlyRank ML Capstone card with the question "Which pages keep losing the clicks they should be getting?" beside a bar chart of clicks against what each position predicts, where position 3 earns a third of its expected clicks.',
+  height: OG_IMAGE_HEIGHT,
+  url: new URL(withBase("og.png"), Astro.site),
+  width: OG_IMAGE_WIDTH,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {/* Basic page metadata and the links that search engines and browsers read. */}
+    <meta name="description" content={description} />
+    <meta name="author" content="Neil Ivan Orencia" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    <link rel="apple-touch-icon" href={withBase("apple-touch-icon.png")} />
+    <link rel="alternate" type="application/pdf" href={pdfUrl} title="Full report (PDF)" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    {/* The browser bar color follows the system theme, matching the light page and the dark night background. */}
+    <meta name="theme-color" content="#F8FAF9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#06191B" media="(prefers-color-scheme: dark)" />
+
+    {/* Open Graph and Twitter tags for the share preview, where both use the same card image. */}
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="FlyRank ML Capstone" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImage.url} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(ogImage.width)} />
+    <meta property="og:image:height" content={String(ogImage.height)} />
+    <meta property="og:image:alt" content={ogImage.alt} />
+    <meta property="article:author" content={LINKEDIN_URL} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.url} />
+    <meta name="twitter:image:alt" content={ogImage.alt} />
+
+    {/* The schema.org data that describes the paper as a scholarly article. */}
+    <StructuredData
+      description={description}
+      headline={headline}
+      image={ogImage}
+      pdfUrl={pdfUrl}
+      title={title}
+      url={canonicalUrl}
+    />
+
+    {/* The body font is preloaded and the mono font is not. */}
+    <Font cssVariable="--font-geist" preload />
+    <Font cssVariable="--font-geist-mono" />
+
+    {/* Runs before first paint to set the theme, and its line endings are normalized to match the text that `astro.config.mjs` hashes for the content security policy. */}
+    <script is:inline set:html={themeInit.replaceAll("\r\n", "\n")}></script>
+  </head>
+  <body>
+    {/* The first focusable element, so keyboard users can jump past the navigation to the main content. */}
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <slot />
+    <script>
+      import "@/scripts/smooth-scroll.ts";
+      import "@/scripts/reveal.ts";
+      import "@/scripts/scrub.ts";
+    </script>
+  </body>
+</html>
+
+<style>
+  /* Parked above the viewport until it receives keyboard focus, then slid into view. */
+  .skip-link {
+    position: fixed;
+    inset-block-start: var(--space-3);
+    inset-inline-start: var(--space-3);
+    z-index: 100;
+    padding: var(--space-2) var(--space-4);
+    font-weight: 600;
+    color: var(--night);
+    background: var(--accent);
+    border-radius: var(--radius-pill);
+    transform: translateY(-200%);
+
+    &:focus-visible {
+      transform: none;
+    }
+  }
+</style>

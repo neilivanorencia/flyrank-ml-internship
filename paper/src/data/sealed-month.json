@@ -1,0 +1,32 @@
+[
+  {
+    "averagePrecision": 0.294,
+    "baseRatePct": 2.2,
+    "captureAt50Pct": 19.2,
+    "precisionAt20": 0.9,
+    "precisionAt50": 0.92,
+    "precisionAt50Mid": 0.68,
+    "rocAuc": 0.711,
+    "scorer": "Rule B (baseline)"
+  },
+  {
+    "averagePrecision": 0.375,
+    "baseRatePct": 2.2,
+    "captureAt50Pct": 12.4,
+    "precisionAt20": 1,
+    "precisionAt50": 0.94,
+    "precisionAt50Mid": 0.56,
+    "rocAuc": 0.915,
+    "scorer": "Logistic regression, unseen clients (primary)"
+  },
+  {
+    "averagePrecision": 0.378,
+    "baseRatePct": 2.2,
+    "captureAt50Pct": 14.6,
+    "precisionAt20": 1,
+    "precisionAt50": 0.94,
+    "precisionAt50Mid": 0.56,
+    "rocAuc": 0.917,
+    "scorer": "Logistic regression, all clients (deployment)"
+  }
+]

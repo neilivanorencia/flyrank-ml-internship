@@ -1,0 +1,26 @@
+[
+  {
+    "band": "Under 100",
+    "inQueuePct": 0.1,
+    "inReviewList": 0,
+    "scoredPages": 99834
+  },
+  {
+    "band": "100 to 999",
+    "inQueuePct": 2,
+    "inReviewList": 0,
+    "scoredPages": 67000
+  },
+  {
+    "band": "1,000 to 9,999",
+    "inQueuePct": 13.2,
+    "inReviewList": 3,
+    "scoredPages": 30905
+  },
+  {
+    "band": "10,000 or more",
+    "inQueuePct": 25.9,
+    "inReviewList": 47,
+    "scoredPages": 4009
+  }
+]

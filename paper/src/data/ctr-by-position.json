@@ -1,0 +1,142 @@
+[
+  {
+    "ctrPct": 0.36,
+    "flaggedPct": 79,
+    "pages": 1896,
+    "pagesWith500Plus": 644,
+    "position": 1
+  },
+  {
+    "ctrPct": 0.42,
+    "flaggedPct": 74,
+    "pages": 12088,
+    "pagesWith500Plus": 8364,
+    "position": 2
+  },
+  {
+    "ctrPct": 0.42,
+    "flaggedPct": 75,
+    "pages": 22131,
+    "pagesWith500Plus": 14866,
+    "position": 3
+  },
+  {
+    "ctrPct": 0.36,
+    "flaggedPct": 78,
+    "pages": 30455,
+    "pagesWith500Plus": 17233,
+    "position": 4
+  },
+  {
+    "ctrPct": 0.33,
+    "flaggedPct": 82,
+    "pages": 34438,
+    "pagesWith500Plus": 17440,
+    "position": 5
+  },
+  {
+    "ctrPct": 0.29,
+    "flaggedPct": 84,
+    "pages": 36726,
+    "pagesWith500Plus": 14710,
+    "position": 6
+  },
+  {
+    "ctrPct": 0.26,
+    "flaggedPct": 85,
+    "pages": 31525,
+    "pagesWith500Plus": 11758,
+    "position": 7
+  },
+  {
+    "ctrPct": 0.27,
+    "flaggedPct": 85,
+    "pages": 26859,
+    "pagesWith500Plus": 8104,
+    "position": 8
+  },
+  {
+    "ctrPct": 0.3,
+    "flaggedPct": 83,
+    "pages": 20189,
+    "pagesWith500Plus": 6016,
+    "position": 9
+  },
+  {
+    "ctrPct": 0.31,
+    "flaggedPct": 82,
+    "pages": 16326,
+    "pagesWith500Plus": 4712,
+    "position": 10
+  },
+  {
+    "ctrPct": 0.33,
+    "flaggedPct": 84,
+    "pages": 12437,
+    "pagesWith500Plus": 3774,
+    "position": 11
+  },
+  {
+    "ctrPct": 0.35,
+    "flaggedPct": 82,
+    "pages": 10644,
+    "pagesWith500Plus": 3200,
+    "position": 12
+  },
+  {
+    "ctrPct": 0.35,
+    "flaggedPct": 82,
+    "pages": 9151,
+    "pagesWith500Plus": 2986,
+    "position": 13
+  },
+  {
+    "ctrPct": 0.32,
+    "flaggedPct": 83,
+    "pages": 8574,
+    "pagesWith500Plus": 2543,
+    "position": 14
+  },
+  {
+    "ctrPct": 0.32,
+    "flaggedPct": 82,
+    "pages": 7631,
+    "pagesWith500Plus": 2377,
+    "position": 15
+  },
+  {
+    "ctrPct": 0.32,
+    "flaggedPct": 83,
+    "pages": 7314,
+    "pagesWith500Plus": 2270,
+    "position": 16
+  },
+  {
+    "ctrPct": 0.31,
+    "flaggedPct": 83,
+    "pages": 6645,
+    "pagesWith500Plus": 2093,
+    "position": 17
+  },
+  {
+    "ctrPct": 0.29,
+    "flaggedPct": 83,
+    "pages": 6296,
+    "pagesWith500Plus": 1921,
+    "position": 18
+  },
+  {
+    "ctrPct": 0.27,
+    "flaggedPct": 86,
+    "pages": 5781,
+    "pagesWith500Plus": 1873,
+    "position": 19
+  },
+  {
+    "ctrPct": 0.24,
+    "flaggedPct": 88,
+    "pages": 5592,
+    "pagesWith500Plus": 1809,
+    "position": 20
+  }
+]

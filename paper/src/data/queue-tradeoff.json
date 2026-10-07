@@ -1,0 +1,68 @@
+[
+  {
+    "chosen": false,
+    "clients": 6,
+    "hitAllPct": 30,
+    "hitUntouchedPct": 100,
+    "list": "Top 20",
+    "missedClicksSharePct": 5.1,
+    "optimizedByFlyRank": 14,
+    "pages": 20,
+    "vanished": 0
+  },
+  {
+    "chosen": false,
+    "clients": 11,
+    "hitAllPct": 34,
+    "hitUntouchedPct": 94,
+    "list": "Top 50",
+    "missedClicksSharePct": 12.5,
+    "optimizedByFlyRank": 32,
+    "pages": 50,
+    "vanished": 0
+  },
+  {
+    "chosen": false,
+    "clients": 11,
+    "hitAllPct": 34,
+    "hitUntouchedPct": 89,
+    "list": "Top 100",
+    "missedClicksSharePct": 15.9,
+    "optimizedByFlyRank": 62,
+    "pages": 100,
+    "vanished": 0
+  },
+  {
+    "chosen": false,
+    "clients": 15,
+    "hitAllPct": 32,
+    "hitUntouchedPct": 85,
+    "list": "Top 200",
+    "missedClicksSharePct": 21.4,
+    "optimizedByFlyRank": 125,
+    "pages": 200,
+    "vanished": 0
+  },
+  {
+    "chosen": false,
+    "clients": 19,
+    "hitAllPct": 31,
+    "hitUntouchedPct": 81,
+    "list": "Top 500",
+    "missedClicksSharePct": 30.3,
+    "optimizedByFlyRank": 306,
+    "pages": 500,
+    "vanished": 0
+  },
+  {
+    "chosen": true,
+    "clients": 11,
+    "hitAllPct": 32,
+    "hitUntouchedPct": 94,
+    "list": "Top 50, at most 10 per client",
+    "missedClicksSharePct": 9.2,
+    "optimizedByFlyRank": 33,
+    "pages": 50,
+    "vanished": 0
+  }
+]

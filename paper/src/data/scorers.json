@@ -1,0 +1,57 @@
+[
+  {
+    "averagePrecision": 0.385,
+    "beatsRule": null,
+    "captureAt50Pct": 5.6,
+    "carriedForward": null,
+    "gapToRule": 0,
+    "precisionAt20": 0.85,
+    "precisionAt50": 0.8,
+    "precisionAt50Mid": 0.7,
+    "scorer": "Rule B (baseline)"
+  },
+  {
+    "averagePrecision": 0.509,
+    "beatsRule": true,
+    "captureAt50Pct": 3.59,
+    "carriedForward": true,
+    "gapToRule": 0.09,
+    "precisionAt20": 0.875,
+    "precisionAt50": 0.89,
+    "precisionAt50Mid": 0.74,
+    "scorer": "Logistic regression"
+  },
+  {
+    "averagePrecision": 0.415,
+    "beatsRule": false,
+    "captureAt50Pct": 0.46,
+    "carriedForward": null,
+    "gapToRule": -0.269,
+    "precisionAt20": 0.531,
+    "precisionAt50": 0.531,
+    "precisionAt50Mid": 0.454,
+    "scorer": "Decision tree"
+  },
+  {
+    "averagePrecision": 0.521,
+    "beatsRule": false,
+    "captureAt50Pct": 0.97,
+    "carriedForward": null,
+    "gapToRule": 0.01,
+    "precisionAt20": 0.875,
+    "precisionAt50": 0.81,
+    "precisionAt50Mid": 0.69,
+    "scorer": "Random forest"
+  },
+  {
+    "averagePrecision": 0.511,
+    "beatsRule": false,
+    "captureAt50Pct": 1.31,
+    "carriedForward": null,
+    "gapToRule": 0.02,
+    "precisionAt20": 0.775,
+    "precisionAt50": 0.82,
+    "precisionAt50Mid": 0.75,
+    "scorer": "Gradient boosting"
+  }
+]

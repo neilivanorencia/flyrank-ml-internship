@@ -1,0 +1,22 @@
+[
+  {
+    "key": "records",
+    "label": "daily page records",
+    "value": 78835655
+  },
+  {
+    "key": "pages",
+    "label": "pages in the content table",
+    "value": 519606
+  },
+  {
+    "key": "shortfalls",
+    "label": "real shortfalls in the sealed month",
+    "value": 2978
+  },
+  {
+    "key": "list",
+    "label": "pages on the review list",
+    "value": 50
+  }
+]

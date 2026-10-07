@@ -1,0 +1,38 @@
+[
+  {
+    "notShort": 21259,
+    "notShortThenShortPct": 13.2,
+    "pair": "2026-02 → 2026-03",
+    "ratio": 3.9,
+    "sealed": false,
+    "shortAgainPct": 51.1,
+    "shortInM": 6472
+  },
+  {
+    "notShort": 30355,
+    "notShortThenShortPct": 9.8,
+    "pair": "2026-03 → 2026-04",
+    "ratio": 4.5,
+    "sealed": false,
+    "shortAgainPct": 43.9,
+    "shortInM": 8662
+  },
+  {
+    "notShort": 22779,
+    "notShortThenShortPct": 8.5,
+    "pair": "2026-04 → 2026-05",
+    "ratio": 3.8,
+    "sealed": false,
+    "shortAgainPct": 32.6,
+    "shortInM": 6891
+  },
+  {
+    "notShort": 14063,
+    "notShortThenShortPct": 5.8,
+    "pair": "2026-05 → 2026-06",
+    "ratio": 4.8,
+    "sealed": true,
+    "shortAgainPct": 28,
+    "shortInM": 2857
+  }
+]

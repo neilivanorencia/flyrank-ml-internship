@@ -1,0 +1,26 @@
+[
+  {
+    "avgProbabilityPct": 77,
+    "confidence": "High",
+    "pages": 2267,
+    "repeatAllPct": 25,
+    "repeatUntouchedPct": 62,
+    "untouchedPages": 919
+  },
+  {
+    "avgProbabilityPct": 43,
+    "confidence": "Medium",
+    "pages": 3453,
+    "repeatAllPct": 14,
+    "repeatUntouchedPct": 33,
+    "untouchedPages": 1482
+  },
+  {
+    "avgProbabilityPct": 21,
+    "confidence": "Low",
+    "pages": 2412,
+    "repeatAllPct": 9,
+    "repeatUntouchedPct": 16,
+    "untouchedPages": 1359
+  }
+]

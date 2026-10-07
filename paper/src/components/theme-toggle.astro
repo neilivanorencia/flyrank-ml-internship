@@ -1,0 +1,57 @@
+---
+/**
+ * A button that switches between the light and dark themes.
+ */
+
+import MoonIcon from "@phosphor-icons/core/assets/regular/moon.svg";
+import SunIcon from "@phosphor-icons/core/assets/regular/sun.svg";
+---
+
+{/* The visible text is hidden and the icons are decorative, so the button is announced as a pressed toggle named `Dark theme`. */}
+<button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+  <span class="visually-hidden">Dark theme</span>
+  <MoonIcon class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true" />
+  <SunIcon class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true" />
+</button>
+
+<script>
+  import "@/scripts/theme.ts";
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--toggle-line, currentcolor);
+    border-radius: var(--radius-pill);
+    transition: transform 160ms ease-out;
+
+    &:active {
+      transform: scale(0.96);
+    }
+  }
+
+  /* The toggle does nothing without JavaScript, so it is hidden until the `js` class is set on the page. */
+  :global(html:not(.js)) .theme-toggle {
+    display: none;
+  }
+
+  .theme-toggle__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .theme-toggle__icon--sun,
+  .theme-toggle[data-active-theme="dark"] .theme-toggle__icon--moon {
+    display: none;
+  }
+
+  .theme-toggle[data-active-theme="dark"] .theme-toggle__icon--sun {
+    display: block;
+  }
+</style>

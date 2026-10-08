@@ -1,0 +1,474 @@
+---
+/**
+ * A modal dialog that shows a chart's details, credits its sources, and copies the data as CSV.
+ * The content goes in the default slot, and `@/scripts/dialog.ts` opens, closes, and animates it from the `data-*` hooks below.
+ */
+
+import CopyIcon from "@phosphor-icons/core/assets/regular/copy-simple.svg";
+import NotebookIcon from "@phosphor-icons/core/assets/regular/notebook.svg";
+import CloseIcon from "@phosphor-icons/core/assets/regular/x.svg";
+
+import SourceLink from "@/components/source-link.astro";
+import type { SourceId } from "@/lib/sources";
+
+/** The text, sources, and look of one dialog. */
+interface Props {
+  /** The data as CSV text, copied to the clipboard by the copy button. */
+  csv: string;
+  /** The dialog's `id`, which an opener button points at. */
+  id: string;
+  /** A short description of what the dialog holds, shown beside the label chip. */
+  kind: string;
+  /** The tag in the header chip. */
+  label: string;
+  /** The sources to credit, where the first is the origin and the rest are places the data was re-checked. */
+  sources: readonly SourceId[];
+  subtitle?: string | undefined;
+  title: string;
+  /** Picks the light or dark theme to match the figure that opens it. */
+  tone?: "dark" | "light";
+}
+
+const { csv, id, kind, label, sources, subtitle, title, tone = "light" } = Astro.props;
+// The first source is the origin and any others are credited as re-checks.
+const [origin, ...rechecks] = sources;
+---
+
+{/* A native `dialog` element, so the browser handles focus trapping and the Esc key. */}
+<dialog
+  class:list={["chart-dialog", `chart-dialog--${tone}`]}
+  id={id}
+  aria-labelledby={`${id}-title`}
+>
+  {/* The panel fills the whole dialog box, so a click on the dialog itself is a click on the backdrop. */}
+  <div class="chart-dialog__panel">
+    {/* The drag handle that marks the bottom sheet on phones, hidden elsewhere by CSS. */}
+    <div class="chart-dialog__grab" aria-hidden="true"></div>
+    <header class="chart-dialog__head">
+      <div class="chart-dialog__top">
+        <p class="chart-dialog__eyebrow">
+          <span class="chart-dialog__chip">{label}</span>
+          <span class="chart-dialog__kind">{kind}</span>
+        </p>
+        <div class="chart-dialog__actions">
+          <kbd class="chart-dialog__esc">esc</kbd>
+          <button class="chart-dialog__close" type="button" data-dialog-close aria-label="Close">
+            <CloseIcon class="chart-dialog__close-icon" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <h2 class="chart-dialog__title" id={`${id}-title`}>
+        {title}
+      </h2>
+      {subtitle !== undefined && <p class="chart-dialog__subtitle">{subtitle}</p>}
+    </header>
+    {/* The body is focusable and labelled, so keyboard users can scroll it. */}
+    <div class="chart-dialog__body" tabindex="0" role="region" aria-label={`${title}: details`}>
+      <slot />
+    </div>
+    {/* The footer credits the source and offers the CSV copy. */}
+    <footer class="chart-dialog__foot">
+      <p class="chart-dialog__source">
+        <NotebookIcon class="chart-dialog__source-icon" aria-hidden="true" />
+        <span class="chart-dialog__source-text">
+          <span class="chart-dialog__source-key">source</span>
+          <span class="chart-dialog__source-value">
+            {origin !== undefined && <SourceLink id={origin} />}
+            {rechecks.map((recheck) => (
+              <Fragment>
+                {", re-checked in "}
+                <SourceLink id={recheck} />
+              </Fragment>
+            ))}
+          </span>
+        </span>
+      </p>
+      {/* The script copies the text in `data-csv`, then updates the label and the status line below. */}
+      <button class="chart-dialog__copy" type="button" data-copy-csv data-csv={csv}>
+        <CopyIcon class="chart-dialog__copy-icon" aria-hidden="true" />
+        <span data-copy-label>Copy as CSV</span>
+      </button>
+      <span class="visually-hidden" role="status" data-copy-status></span>
+    </footer>
+  </div>
+</dialog>
+
+<style>
+  .chart-dialog {
+    --dialog-bg: var(--surface);
+    --dialog-ink: var(--ink);
+    --dialog-ink-2: var(--ink-2);
+    --dialog-line: var(--line);
+    --dialog-soft: var(--bg-alt);
+    --dialog-foot: var(--bg);
+    --dialog-emphasis: var(--accent-wash);
+    --dialog-chip-ink: var(--accent-ink);
+    --dialog-chip-bg: var(--accent-wash);
+    --dialog-chip-line: var(--accent-ink);
+    --source-link-ink: var(--dialog-chip-ink);
+
+    /* Zero insets with auto margins center the dialog, and a narrower max width keeps a gutter on both sides. */
+    inset: 0;
+    width: min(53.75rem, 100% - 2 * var(--gutter));
+    max-width: none;
+    max-height: calc(100dvh - 3rem);
+    padding: 0;
+    margin: auto;
+    overflow: visible;
+    color: var(--dialog-ink);
+    background: transparent;
+    border: 0;
+
+    /* The backdrop tint and the easing curves for opening and closing, where the dark tone below overrides the tint. */
+    --backdrop: #06191ba6;
+    --enter: cubic-bezier(0.22, 1, 0.36, 1);
+    --leave: cubic-bezier(0.4, 0, 1, 1);
+
+    &[open] {
+      animation: dialog-in 380ms var(--enter) both;
+    }
+
+    &[open]::backdrop {
+      background-color: var(--backdrop);
+      backdrop-filter: blur(3px);
+      animation: backdrop-in 300ms ease-out both;
+    }
+
+    /* The script sets `data-closing` first so the outro can play before it calls `close`. */
+    &[open][data-closing] {
+      animation: dialog-out 200ms var(--leave) both;
+    }
+
+    &[open][data-closing]::backdrop {
+      animation: backdrop-out 200ms ease-in both;
+    }
+  }
+
+  .chart-dialog--dark {
+    --dialog-bg: var(--night-raised);
+    --dialog-ink: var(--on-night);
+    --dialog-ink-2: var(--on-night-2);
+    --dialog-line: var(--night-line);
+    --dialog-soft: var(--night);
+    --dialog-foot: var(--night);
+    --dialog-emphasis: var(--night-mint-wash);
+    --dialog-chip-ink: var(--accent);
+    --dialog-chip-bg: var(--night-mint-wash);
+    --dialog-chip-line: var(--night-mint-line);
+    --backdrop: #020a0bb3;
+
+    width: min(40rem, 100% - 2 * var(--gutter));
+  }
+
+  .chart-dialog__panel {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 3rem);
+    overflow: hidden;
+    background-color: var(--dialog-bg);
+    border: 1px solid var(--dialog-line);
+    border-radius: var(--radius-card-large);
+    box-shadow: 0 24px 64px #06191b40;
+  }
+
+  .chart-dialog__grab {
+    display: none;
+  }
+
+  .chart-dialog__head {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-6) var(--space-4);
+  }
+
+  .chart-dialog__top {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chart-dialog__eyebrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    align-items: center;
+  }
+
+  .chart-dialog__chip {
+    padding: 0.25rem 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--dialog-chip-ink);
+    background-color: var(--dialog-chip-bg);
+    border: 1px solid var(--dialog-chip-line);
+    border-radius: var(--radius-pill);
+  }
+
+  .chart-dialog__kind {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--dialog-ink-2);
+  }
+
+  .chart-dialog__actions {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .chart-dialog__esc {
+    padding: 0.1875rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--dialog-ink-2);
+    border: 1px solid var(--dialog-line);
+    border-radius: 6px;
+  }
+
+  .chart-dialog__close {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--dialog-ink);
+    cursor: pointer;
+    background-color: var(--dialog-soft);
+    border: 0;
+    border-radius: 50%;
+    transition: transform 160ms ease-out;
+
+    &:active {
+      transform: scale(0.94);
+    }
+  }
+
+  .chart-dialog__close-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .chart-dialog__title {
+    font-size: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+    line-height: 1.3;
+    color: var(--dialog-ink);
+    letter-spacing: -0.02em;
+  }
+
+  .chart-dialog__subtitle {
+    font-size: 0.875rem;
+    color: var(--dialog-ink-2);
+  }
+
+  .chart-dialog__body {
+    flex: 1;
+    min-height: 0;
+    padding: 0 var(--space-5) var(--space-5);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: var(--dialog-line) transparent;
+    scrollbar-width: thin;
+  }
+
+  .chart-dialog--dark .chart-dialog__body {
+    padding-block-end: var(--space-5);
+    padding-inline: var(--space-6);
+  }
+
+  .chart-dialog__foot {
+    display: flex;
+    flex: none;
+    gap: var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6) var(--space-5);
+    background-color: var(--dialog-foot);
+    border-block-start: 1px solid var(--dialog-line);
+  }
+
+  .chart-dialog__source {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    min-width: 0;
+  }
+
+  .chart-dialog__source-icon {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    color: var(--dialog-ink-2);
+  }
+
+  .chart-dialog__source-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
+  .chart-dialog__source-key {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--dialog-ink-2);
+  }
+
+  .chart-dialog__source-value {
+    font-size: 0.8125rem;
+    color: var(--dialog-ink);
+  }
+
+  .chart-dialog__copy {
+    display: inline-flex;
+    flex: none;
+    gap: var(--space-2);
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 var(--space-4);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dialog-ink);
+    cursor: pointer;
+    background-color: transparent;
+    border: 1px solid var(--dialog-line);
+    border-radius: var(--radius-pill);
+    transition: background-color 160ms ease-out;
+
+    &:hover {
+      background-color: var(--dialog-soft);
+    }
+  }
+
+  .chart-dialog__copy-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem) scale(0.97);
+    }
+  }
+
+  @keyframes dialog-out {
+    to {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes backdrop-in {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0);
+    }
+  }
+
+  @keyframes backdrop-out {
+    to {
+      opacity: 0;
+      backdrop-filter: blur(0);
+    }
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes sheet-out {
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  /* On phones the dialog becomes a full-width bottom sheet that slides up and down. */
+  @media (width < 40rem) {
+    .chart-dialog,
+    .chart-dialog--dark {
+      width: 100%;
+      max-height: 92dvh;
+      margin: auto 0 0;
+
+      &[open] {
+        animation-name: sheet-in;
+        animation-duration: 420ms;
+      }
+
+      &[open][data-closing] {
+        animation-name: sheet-out;
+        animation-duration: 240ms;
+      }
+    }
+
+    .chart-dialog__panel {
+      max-height: 92dvh;
+      border-block-end: 0;
+      border-inline: 0;
+      border-radius: 0;
+    }
+
+    .chart-dialog__top {
+      align-items: flex-start;
+    }
+
+    .chart-dialog__close {
+      position: relative;
+      width: 1.75rem;
+      height: 1.75rem;
+      background-color: transparent;
+      border: 1px solid var(--dialog-line);
+      border-radius: 0;
+
+      /* An invisible extension that grows the tap target of the small button. */
+      &::after {
+        position: absolute;
+        inset: -0.4375rem;
+        content: "";
+      }
+    }
+
+    .chart-dialog__close-icon {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    .chart-dialog__grab {
+      display: block;
+      flex: none;
+      width: 2.5rem;
+      height: 4px;
+      margin: 0.625rem auto 0;
+      background-color: var(--dialog-line);
+      border-radius: 2px;
+    }
+
+    .chart-dialog__head {
+      padding: var(--space-3) var(--space-5) var(--space-4);
+    }
+
+    .chart-dialog__esc {
+      display: none;
+    }
+
+    .chart-dialog__foot {
+      flex-direction: column;
+      gap: var(--space-3);
+      align-items: stretch;
+      padding: var(--space-4) var(--space-5) var(--space-6);
+    }
+
+    .chart-dialog__copy {
+      justify-content: center;
+    }
+
+    .chart-dialog--dark .chart-dialog__body {
+      padding-inline: var(--space-5);
+    }
+  }
+</style>

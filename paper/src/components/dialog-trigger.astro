@@ -1,0 +1,158 @@
+---
+/**
+ * A pill button that opens a chart dialog.
+ * The click is handled by `@/scripts/dialog.ts`, which reads the dialog id from `data-dialog-open`.
+ */
+
+import ArrowsOutIcon from "@phosphor-icons/core/assets/regular/arrows-out-simple.svg";
+import BarsIcon from "@phosphor-icons/core/assets/regular/chart-bar-horizontal.svg";
+import TableIcon from "@phosphor-icons/core/assets/regular/table.svg";
+
+/** The target dialog and the wording and look of its button. */
+interface Props {
+  /** The `id` of the dialog element that this button opens. */
+  dialogId: string;
+  /** Picks the icon in the round chip, where `bars` stands for a chart and `table` for its numbers. */
+  icon?: "bars" | "table";
+  label: string;
+  /** A small note after the label, such as a row count. */
+  meta?: string;
+  /** Matches the surface the button sits on, from the light page to the dark and band sections. */
+  tone?: "band" | "dark" | "light";
+}
+
+const { dialogId, icon = "table", label, meta, tone = "light" } = Astro.props;
+
+/** The icon component for each `icon` option. */
+const icons = { bars: BarsIcon, table: TableIcon } as const;
+/** The icon for this button. */
+const Icon = icons[icon];
+---
+
+<button
+  class:list={["dialog-trigger", `dialog-trigger--${tone}`]}
+  type="button"
+  data-dialog-open={dialogId}
+  aria-haspopup="dialog"
+>
+  <span class="dialog-trigger__chip">
+    <Icon class="dialog-trigger__icon" aria-hidden="true" />
+  </span>
+  <span class="dialog-trigger__label">{label}</span>
+  {meta !== undefined && <span class="dialog-trigger__meta">{meta}</span>}
+  <ArrowsOutIcon class="dialog-trigger__arrow" aria-hidden="true" />
+</button>
+
+<script>
+  import "@/scripts/dialog.ts";
+</script>
+
+<style>
+  .dialog-trigger {
+    /* The `--trigger-*` properties hold the light theme here and each tone class below swaps them. */
+    --trigger-ink: var(--ink);
+    --trigger-ink-2: var(--ink-2);
+    --trigger-line: var(--line);
+    --trigger-chip: var(--bg-alt);
+    --trigger-accent: var(--accent-ink);
+    --trigger-hover: var(--accent-wash);
+
+    display: inline-flex;
+    gap: var(--space-3);
+    align-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
+    font-size: 0.875rem;
+    color: var(--trigger-ink);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--trigger-line);
+    border-radius: var(--radius-pill);
+    transition:
+      background-color 160ms ease-out,
+      border-color 160ms ease-out,
+      transform 160ms ease-out;
+
+    &:hover {
+      background-color: var(--trigger-hover);
+      border-color: var(--trigger-accent);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  .dialog-trigger--dark {
+    --trigger-ink: var(--on-night);
+    --trigger-ink-2: var(--on-night-2);
+    --trigger-line: var(--night-line);
+    --trigger-chip: var(--night-raised);
+    --trigger-accent: var(--accent);
+    --trigger-hover: var(--night-mint-wash);
+  }
+
+  .dialog-trigger--band {
+    --trigger-ink: var(--band-ink);
+    --trigger-ink-2: var(--band-ink-2);
+    --trigger-line: var(--band-line);
+    --trigger-chip: var(--band-empty);
+    --trigger-accent: var(--band-ink);
+    --trigger-hover: var(--band-empty);
+  }
+
+  .dialog-trigger__chip {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    background-color: var(--trigger-chip);
+    border-radius: 50%;
+  }
+
+  .dialog-trigger__icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--trigger-accent);
+  }
+
+  .dialog-trigger__label {
+    font-weight: 600;
+  }
+
+  .dialog-trigger__meta {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--trigger-ink-2);
+  }
+
+  .dialog-trigger__arrow {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--trigger-ink-2);
+  }
+
+  /* On phones the button fills the row, with the label and the arrow pushed apart by auto margins. */
+  @media (width < 40rem) {
+    .dialog-trigger {
+      display: flex;
+      width: 100%;
+      padding-inline-end: var(--space-3);
+    }
+
+    .dialog-trigger__label {
+      margin-inline-start: auto;
+      text-align: center;
+    }
+
+    .dialog-trigger__arrow {
+      margin-inline-start: auto;
+    }
+  }
+
+  /* The dialog needs JavaScript to open, so the button is hidden until the `js` class is set on the page. */
+  :global(html:not(.js)) .dialog-trigger {
+    display: none;
+  }
+</style>

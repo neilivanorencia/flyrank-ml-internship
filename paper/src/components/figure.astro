@@ -1,0 +1,375 @@
+---
+import ChartDialog from "@/components/chart-dialog.astro";
+import DialogTrigger from "@/components/dialog-trigger.astro";
+import NumbersTable from "@/components/numbers-table.astro";
+import SourceLink from "@/components/source-link.astro";
+import toCsv from "@/lib/csv";
+import type { SourceId } from "@/lib/sources";
+
+/**
+ * The frame around every chart, with a title, a legend, a caption, a source link, and a dialog that shows the numbers behind it.
+ * Charts go in the default slot, and the numbers table gives readers a text version of what the chart draws.
+ */
+
+/** One entry in the legend, drawn as a colored swatch and a label. */
+interface LegendItem {
+  readonly label: string;
+  /** The swatch shape, which defaults to a square. */
+  readonly shape?: "bar" | "dot" | "rule" | "square";
+  /** The swatch color, named after the chart color it stands for. */
+  readonly tone: "accent" | "data-a" | "data-b" | "data-c" | "ink-body" | "line";
+}
+
+/** A heading in the numbers table, with an optional swatch that matches a legend entry. */
+interface Column {
+  readonly label: string;
+  readonly swatch?: LegendItem["tone"];
+}
+
+/** The numbers behind the chart, in the shape the table and the CSV copy need. */
+interface FigureNumbers {
+  /** The headings, where a plain string is shorthand for a heading with no swatch. */
+  readonly columns: readonly (Column | string)[];
+  /** Highlights the last row of the table. */
+  readonly emphasizeLast?: boolean;
+  /** The body rows as text cells, where the first cell of each row is its row heading. */
+  readonly rows: readonly (readonly string[])[];
+}
+
+/** The text and options for one figure. */
+interface Props {
+  /** The sentence under the chart that says what to take from it. */
+  caption?: string;
+  /** The base for the ids that link the figure to its title and dialog, so it must be unique on the page. */
+  id: string;
+  /** The tag in the numbers dialog's header chip. */
+  label?: string;
+  legend?: readonly LegendItem[];
+  numbers: FigureNumbers;
+  /** The key of the data source to credit in the caption and the dialog. */
+  source?: SourceId;
+  /** Text added right after the source link in the caption. */
+  sourceNote?: string;
+  subtitle?: string;
+  title: string;
+  /** The heading element for the title, where `p` avoids adding a heading to the page outline. */
+  titleAs?: "h3" | "p";
+  /** Hides the title and subtitle from sight but keeps them for assistive tech. */
+  titleHidden?: boolean;
+  /** Picks the surface the figure sits on, from a light card to the dark and band sections. */
+  tone?: "band" | "card" | "dark" | "plain";
+}
+
+const {
+  caption,
+  id,
+  label = "Data",
+  legend = [],
+  numbers,
+  source,
+  sourceNote = "",
+  subtitle,
+  title,
+  titleAs: TitleTag = "h3",
+  titleHidden = false,
+  tone = "card",
+} = Astro.props;
+
+/**
+ * Turns the shorthand string form of a column into a full column.
+ * @param column - A column object or a plain heading string.
+ * @returns The column object.
+ */
+const asColumn = (column: Column | string): Column => {
+  // A plain string is just a heading with no swatch.
+  if (typeof column === "string") {
+    return { label: column };
+  }
+  return column;
+};
+
+/**
+ * Lists the sources to credit in the numbers dialog.
+ * @param origin - The figure's own source, if it has one.
+ * @returns The own source followed by the capstone, which re-checks every figure.
+ */
+const dialogSources = (origin: SourceId | undefined): readonly SourceId[] => {
+  // A figure with no source of its own credits only the capstone.
+  if (origin === undefined) {
+    return ["capstone"];
+  }
+  return [origin, "capstone"];
+};
+
+/** The columns with every shorthand string expanded to a full column. */
+const columns = numbers.columns.map((column) => asColumn(column));
+/** The id of the numbers dialog, which the trigger button opens. */
+const dialogId = `${id}-numbers`;
+/** The dialog theme for each figure tone, where the dark figures get the dark dialog. */
+const dialogTones = { band: "light", card: "light", dark: "dark", plain: "dark" } as const;
+/** The trigger button theme for each figure tone. */
+const triggerTones = { band: "band", card: "light", dark: "dark", plain: "dark" } as const;
+/** The table as CSV text for the dialog's copy button. */
+const csv = toCsv(
+  columns.map((column) => column.label),
+  numbers.rows
+);
+---
+
+<figure class:list={["figure", `figure--${tone}`]} aria-labelledby={`${id}-title`}>
+  {/* The title block, which can be visually hidden while it still names the figure for assistive tech. */}
+  <div class:list={["figure__head", { "visually-hidden": titleHidden }]}>
+    <TitleTag class="figure__title" id={`${id}-title`}>
+      {title}
+    </TitleTag>
+    {subtitle !== undefined && <p class="figure__subtitle">{subtitle}</p>}
+  </div>
+  {/* The legend is drawn only when the chart passes entries for it. */}
+  {legend.length > 0 && (
+    <ul class="figure__legend">
+      {legend.map((item) => (
+        <li class="figure__key">
+          <span
+            class:list={[
+              "figure__swatch",
+              `figure__swatch--${item.tone}`,
+              `figure__swatch--${item.shape ?? "square"}`,
+            ]}
+            aria-hidden="true"
+          />
+          {item.label}
+        </li>
+      ))}
+    </ul>
+  )}
+  {/* The chart itself, which scrolls sideways on narrow screens. */}
+  <div class="figure__chart">
+    <slot />
+  </div>
+  {/* The caption and source credit appear when either one is given. */}
+  {(caption !== undefined || source !== undefined) && (
+    <figcaption class="figure__caption">
+      {caption}
+      {source !== undefined && (
+        <span class="figure__source">
+          {" "}
+          Source: <SourceLink id={source} />
+          {sourceNote}.
+        </span>
+      )}
+    </figcaption>
+  )}
+  {/* The button opens the dialog below, which shows the numbers behind the chart. */}
+  <div class="figure__actions">
+    <DialogTrigger
+      dialogId={dialogId}
+      label="Show the numbers"
+      meta={`${numbers.rows.length} rows`}
+      tone={triggerTones[tone]}
+    />
+  </div>
+  <ChartDialog
+    csv={csv}
+    id={dialogId}
+    kind="the numbers behind the chart"
+    label={label}
+    sources={dialogSources(source)}
+    subtitle={subtitle}
+    title={title}
+    tone={dialogTones[tone]}
+  >
+    <NumbersTable columns={columns} emphasizeLast={numbers.emphasizeLast} rows={numbers.rows} />
+  </ChartDialog>
+</figure>
+
+<style>
+  .figure {
+    --figure-ink: var(--ink);
+    --figure-ink-2: var(--ink-2);
+    --figure-line: var(--line);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    margin: 0;
+  }
+
+  .figure--card {
+    padding: clamp(var(--space-4), 4vw, var(--space-6));
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+
+  .figure--dark {
+    --figure-ink: var(--on-night);
+    --figure-ink-2: var(--on-night-2);
+    --figure-line: var(--night-line);
+    --source-link-ink: var(--accent);
+
+    gap: var(--space-4);
+    padding: clamp(var(--space-4), 4vw, var(--space-6));
+    background-color: color-mix(in srgb, var(--night-raised) 80%, transparent);
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-card);
+  }
+
+  .figure--band {
+    --figure-ink: var(--band-ink);
+    --figure-ink-2: var(--band-ink-2);
+    --figure-line: var(--band-line);
+    --source-link-ink: var(--band-ink);
+  }
+
+  .figure--plain {
+    --figure-ink: var(--on-night);
+    --figure-ink-2: var(--on-night-2);
+    --figure-line: var(--night-line);
+    --source-link-ink: var(--accent);
+  }
+
+  .figure__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .figure__title {
+    font-size: var(--text-figure-title);
+    line-height: 1.3;
+    color: var(--figure-ink);
+    letter-spacing: -0.015em;
+  }
+
+  .figure--dark .figure__title,
+  .figure--plain .figure__title {
+    font-size: 1rem;
+  }
+
+  .figure__subtitle {
+    font-size: 0.875rem;
+    color: var(--figure-ink-2);
+  }
+
+  .figure--dark .figure__subtitle {
+    font-size: var(--text-small);
+  }
+
+  .figure--plain .figure__head:not(.visually-hidden) {
+    flex-flow: row wrap;
+    gap: var(--space-2) var(--space-5);
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .figure--plain .figure__subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+  }
+
+  .figure__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .figure__key {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-size: 0.8125rem;
+    color: var(--figure-ink-2);
+  }
+
+  .figure--dark .figure__key {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+  }
+
+  .figure__swatch {
+    flex: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 3px;
+  }
+
+  .figure__swatch--dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+  }
+
+  .figure__swatch--bar {
+    width: 0.875rem;
+    height: 0.5rem;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .figure__swatch--rule {
+    width: 2px;
+    height: 0.75rem;
+    border-radius: 0;
+  }
+
+  .figure__swatch--accent {
+    background-color: var(--accent);
+  }
+
+  .figure__swatch--data-a {
+    background-color: var(--data-a);
+  }
+
+  .figure__swatch--data-b {
+    background-color: var(--data-b);
+  }
+
+  .figure__swatch--data-c {
+    background-color: var(--data-c);
+  }
+
+  .figure__swatch--ink-body {
+    background-color: var(--ink-body);
+  }
+
+  .figure__swatch--line {
+    background-color: var(--line);
+  }
+
+  /* On the dark surface the second data series swatch switches to coral. */
+  .figure--dark .figure__swatch--data-b {
+    background-color: var(--coral);
+  }
+
+  .figure__chart {
+    min-width: 0;
+    padding-block-end: var(--space-1);
+
+    /* Lets a chart that is wider than the screen scroll sideways inside the figure instead of widening the page. */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-color: var(--line) transparent;
+    scrollbar-width: thin;
+  }
+
+  .figure__caption {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--figure-ink-2);
+  }
+
+  .figure--dark .figure__caption {
+    font-size: var(--text-small);
+  }
+
+  .figure--band .figure__caption {
+    font-size: 0.75rem;
+  }
+
+  .figure__actions {
+    display: flex;
+  }
+</style>

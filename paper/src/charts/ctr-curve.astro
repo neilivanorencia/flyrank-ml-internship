@@ -1,0 +1,238 @@
+---
+/**
+ * Fig. 1, a column chart of the share of pages the flat rule flags at each Google position from 1 to 20.
+ * It shows how the flat rule's flags pile up at the lower positions, where low click rates are normal.
+ */
+
+import { range } from "d3-array";
+
+import Figure from "@/components/figure.astro";
+import ctrByPosition from "@/data/ctr-by-position.json";
+import type { CtrRow } from "@/data/types";
+
+import { formatInteger, linearTrack, trackStyle, wholePercentText } from "@/charts/scales.ts";
+
+/** The text this figure takes from the section that places it. */
+interface Props {
+  caption: string;
+  subtitle: string;
+  title: string;
+}
+
+const { caption, subtitle, title } = Astro.props;
+
+/** The click-through rows, one per position, typed from the extracted JSON. */
+const rows = ctrByPosition as readonly CtrRow[];
+/** The top of the value axis, because flagged shares are percentages. */
+const PERCENT_MAX = 100;
+/** Percentage points between gridlines. */
+const GRID_STEP = 25;
+/** The axis values where a tick label and a gridline are drawn. */
+const GRID_LINES = range(0, PERCENT_MAX + GRID_STEP, GRID_STEP);
+/** The position with the best normal click rate, which gets a value label. */
+const BEST_POSITION = 2;
+/** The positions whose columns print their value, the best position and the last one. */
+const LABELLED_POSITIONS = new Set([BEST_POSITION, rows.length]);
+/** The spacing between positions that keep their label on narrow screens. */
+const MAJOR_STEP = 5;
+
+/**
+ * Tells whether a position keeps its label when the labels are thinned out on narrow screens.
+ * @param position - The Google position, starting at 1.
+ * @returns `true` for position 1 and every multiple of `MAJOR_STEP`.
+ */
+const isMajor = (position: number): boolean => position === 1 || position % MAJOR_STEP === 0;
+/** Maps a percentage onto the 0 to 100 track used for heights and gridlines. */
+const track = linearTrack(0, PERCENT_MAX);
+
+/** The table of numbers that `Figure` offers as a text alternative to the chart. */
+const numbers = {
+  columns: ["Position", "Share of pages flagged", "Pages with 500+ impressions"],
+  rows: rows.map((row) => [
+    String(row.position),
+    wholePercentText(row.flaggedPct),
+    formatInteger(row.pagesWith500Plus),
+  ]),
+};
+---
+
+<Figure
+  id="ctr-curve"
+  label="Fig. 1"
+  source="signal-audit"
+  sourceNote=", positions 1 to 20"
+  title={title}
+  subtitle={subtitle}
+  caption={caption}
+  numbers={numbers}
+>
+  <div
+    class="ctr-curve"
+    role="group"
+    data-chart
+    data-tooltips
+    aria-label="Share of pages flagged by the flat rule, positions 1 to 20"
+  >
+    {/* Percent labels down the left edge, hidden from assistive tech because the numbers table covers them. */}
+    <div class="ctr-curve__axis" aria-hidden="true">
+      {GRID_LINES.map((value) => (
+        <span class="ctr-curve__tick" style={`--at: ${trackStyle(track(value))}`}>
+          {wholePercentText(value)}
+        </span>
+      ))}
+    </div>
+    <div class="ctr-curve__field">
+      {/* Gridlines drawn behind the columns at the same values as the tick labels. */}
+      <div class="ctr-curve__grid" aria-hidden="true">
+        {GRID_LINES.map((value) => (
+          <span class="ctr-curve__line" style={`--at: ${trackStyle(track(value))}`} />
+        ))}
+      </div>
+      {/* One slot per position, each holding its column and its position label. */}
+      <ol class="ctr-curve__plot">
+        {rows.map((row) => (
+          <li
+            class="ctr-curve__slot"
+            data-label={`Position ${row.position}`}
+            data-value={wholePercentText(row.flaggedPct)}
+          >
+            <span class="ctr-curve__column">
+              <span
+                class="ctr-curve__bar"
+                data-grow="y"
+                style={`height: ${trackStyle(track(row.flaggedPct))}`}
+              >
+                {/* Only the best and last positions print a value, to avoid crowding the columns. */}
+                {LABELLED_POSITIONS.has(row.position) && (
+                  <span class="ctr-curve__value" data-fade>
+                    {wholePercentText(row.flaggedPct)}
+                  </span>
+                )}
+              </span>
+            </span>
+            {/* Minor position labels are hidden by CSS on narrow screens. */}
+            <span
+              class:list={[
+                "ctr-curve__position",
+                { "ctr-curve__position--minor": !isMajor(row.position) },
+              ]}
+            >
+              {row.position}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</Figure>
+
+<style>
+  .ctr-curve {
+    --plot-height: 13.75rem;
+    --label-height: 1.5rem;
+
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--ink-2);
+  }
+
+  .ctr-curve__axis {
+    position: relative;
+    height: var(--plot-height);
+  }
+
+  .ctr-curve__tick {
+    position: absolute;
+    inset-block-end: var(--at);
+    inset-inline-start: 0;
+
+    /* Centers each tick label on its gridline. */
+    translate: 0 50%;
+  }
+
+  .ctr-curve__field {
+    position: relative;
+    min-width: 0;
+  }
+
+  .ctr-curve__grid {
+    position: absolute;
+    inset-block: 0 var(--label-height);
+    inset-inline: 0;
+  }
+
+  .ctr-curve__line {
+    position: absolute;
+    inset-block-end: var(--at);
+    inset-inline: 0;
+    height: 1px;
+    background-color: var(--line);
+  }
+
+  .ctr-curve__plot {
+    position: relative;
+    display: grid;
+
+    /* One column per position from 1 to 20. */
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    align-items: end;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .ctr-curve__slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ctr-curve__column {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    height: var(--plot-height);
+  }
+
+  .ctr-curve__bar {
+    position: relative;
+    width: clamp(0.375rem, 40%, 0.8125rem);
+    background-color: var(--data-b);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .ctr-curve__value {
+    position: absolute;
+    inset-block-end: calc(100% + 0.25rem);
+    inset-inline-start: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink);
+    translate: -50% 0;
+  }
+
+  /* The last label hangs off the right edge so it does not overflow the chart. */
+  .ctr-curve__slot:last-child .ctr-curve__value {
+    inset-inline: auto -0.1875rem;
+    translate: none;
+  }
+
+  .ctr-curve__position {
+    display: grid;
+    place-items: center;
+    height: var(--label-height);
+  }
+
+  @media (width < 40rem) {
+    .ctr-curve__position--minor {
+      /* Transparent instead of hidden, so the label keeps its space and the columns stay aligned. */
+      color: transparent;
+      user-select: none;
+    }
+  }
+</style>

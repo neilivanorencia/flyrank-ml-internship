@@ -1,0 +1,92 @@
+---
+/**
+ * An inline link to one of the paper's data sources, such as a notebook on GitHub, that opens in a new tab.
+ */
+
+import ArrowUpRightIcon from "@phosphor-icons/core/assets/regular/arrow-up-right.svg";
+
+import SOURCES from "@/lib/sources";
+import type { SourceId } from "@/lib/sources";
+
+/** Chooses which source to link to. */
+interface Props {
+  /** The key of the source in the `SOURCES` table. */
+  id: SourceId;
+}
+
+const { id } = Astro.props;
+const { label, url } = SOURCES[id];
+---
+
+<a class="source-link" href={url} target="_blank" rel="noopener noreferrer">
+  {label}
+  <ArrowUpRightIcon class="source-link__icon" aria-hidden="true" />
+  <span class="visually-hidden">(opens the notebook on GitHub in a new tab)</span>
+</a>
+
+<style>
+  .source-link {
+    /* A parent on a dark surface can set `--source-link-ink` to recolor the link, otherwise it uses the accent ink. */
+    --link-ink: var(--source-link-ink, var(--accent-ink));
+
+    display: inline-flex;
+    gap: 0.15em;
+    align-items: baseline;
+    padding: 0.0625rem 0.1875rem;
+
+    /* Cancels the horizontal padding so the link text lines up with the text around it. */
+    margin-inline: -0.1875rem;
+    font-weight: 600;
+    color: var(--link-ink);
+    text-decoration: none;
+
+    /* Two stacked gradients draw a wash and an underline, and hover animates their sizes instead of changing borders. */
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--link-ink) 16%, transparent), transparent),
+      linear-gradient(color-mix(in srgb, var(--link-ink) 55%, transparent), transparent);
+    background-repeat: no-repeat;
+    background-position:
+      0 100%,
+      0 100%;
+    background-size:
+      100% 0%,
+      100% 1px;
+    border-radius: 0.25rem;
+
+    &:hover {
+      background-image:
+        linear-gradient(color-mix(in srgb, var(--link-ink) 16%, transparent), transparent),
+        linear-gradient(var(--link-ink), transparent);
+      background-size:
+        100% 100%,
+        100% 2px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--link-ink);
+      outline-offset: 2px;
+    }
+  }
+
+  .source-link__icon {
+    flex: none;
+    align-self: center;
+    width: 0.8em;
+    height: 0.8em;
+  }
+
+  /* Motion is added only for people who have not asked for reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    .source-link {
+      transition: background-size 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .source-link__icon {
+      transition: translate 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .source-link:hover .source-link__icon {
+      translate: 0.0625rem -0.0625rem;
+    }
+  }
+</style>

@@ -1,0 +1,189 @@
+---
+/**
+ * A funnel of four stages that narrows from the raw search records down to the review list one editor can finish.
+ * Bar lengths use a log scale because the stages differ by several orders of magnitude.
+ */
+
+import CaretRightIcon from "@phosphor-icons/core/assets/regular/caret-right.svg";
+
+import Figure from "@/components/figure.astro";
+import funnel from "@/data/funnel.json";
+import type { FunnelStage } from "@/data/types";
+
+import { formatCompact, formatInteger, logTrack, trackStyle } from "@/charts/scales.ts";
+
+/** The funnel stages in order, typed from the extracted JSON. */
+const stages = funnel as readonly FunnelStage[];
+/** The largest stage value, which sets the end of the log track. */
+const LONGEST = Math.max(...stages.map((stage) => stage.value));
+/** Maps a stage value onto the 0 to 100 log track. */
+const track = logTrack(LONGEST);
+
+/** The plain-language description of each stage, shared by the visible label, the tooltip, and the numbers table. */
+const COPY: Readonly<Record<FunnelStage["key"], string>> = {
+  list: "pages on each month's review list, one first action each",
+  pages: "pages across about 50 client websites",
+  records: "daily Google Search rows, February to June 2026",
+  shortfalls: "real shortfalls in the sealed month, May to June",
+};
+
+/**
+ * Formats a stage's count for the large number above its bar.
+ * @param stage - The funnel stage to format.
+ * @returns A compact figure for the record count, which is too long to read in full, and a full integer for the rest.
+ */
+const valueText = (stage: FunnelStage): string => {
+  // Daily records run to tens of millions, so they use the compact form.
+  if (stage.key === "records") {
+    return formatCompact(stage.value);
+  }
+  return formatInteger(stage.value);
+};
+
+/** The table of numbers that `Figure` offers as a text alternative to the chart. */
+const numbers = {
+  columns: ["Stage", "Count"],
+  rows: stages.map((stage) => [COPY[stage.key], formatInteger(stage.value)]),
+};
+---
+
+<Figure
+  id="funnel"
+  label="Funnel"
+  tone="plain"
+  titleAs="p"
+  title="From raw search data to a list one editor can finish"
+  subtitle="bar length on a log scale"
+  numbers={numbers}
+>
+  <ol
+    class="funnel"
+    data-chart
+    data-tooltips
+    aria-label="Funnel from daily records to the review list"
+  >
+    {/* Each stage is followed by a chevron, except the last one. */}
+    {stages.map((stage, index) => (
+      <>
+        <li
+          class:list={["funnel__stage", { "funnel__stage--last": index === stages.length - 1 }]}
+          data-label={COPY[stage.key]}
+          data-value={formatInteger(stage.value)}
+        >
+          <span class="funnel__number" data-count>
+            {valueText(stage)}
+          </span>
+          <span class="funnel__track" aria-hidden="true">
+            <span
+              class="funnel__bar"
+              data-grow="x"
+              style={`width: ${trackStyle(track(stage.value))}`}
+            />
+          </span>
+          <span class="funnel__label">{COPY[stage.key]}</span>
+        </li>
+        {/* The chevron only shows in the wide layout, where the stages sit in one row. */}
+        {index < stages.length - 1 && (
+          <li class="funnel__chevron" aria-hidden="true">
+            <CaretRightIcon class="funnel__chevron-icon" />
+          </li>
+        )}
+      </>
+    ))}
+  </ol>
+</Figure>
+
+<style>
+  .funnel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .funnel__stage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-1);
+  }
+
+  .funnel__number {
+    font-size: var(--text-number);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--on-night);
+    letter-spacing: -0.03em;
+  }
+
+  .funnel__track {
+    display: block;
+    height: 6px;
+  }
+
+  .funnel__bar {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--night-mint-line));
+    border-radius: 3px;
+  }
+
+  .funnel__label {
+    font-size: var(--text-small);
+    line-height: 1.5;
+    color: var(--on-night-2);
+  }
+
+  /* The last stage is boxed and tinted to mark it as the result. */
+  .funnel__stage--last {
+    padding: var(--space-4) var(--space-5);
+    background-color: var(--night-mint-wash);
+    border: 1px solid var(--night-mint-line);
+    border-radius: var(--radius-card);
+
+    .funnel__number {
+      color: var(--accent);
+    }
+
+    .funnel__bar {
+      background: linear-gradient(90deg, var(--accent), var(--mint-soft));
+    }
+  }
+
+  .funnel__chevron {
+    display: none;
+  }
+
+  .funnel__chevron-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--on-night-2);
+  }
+
+  /* Wide layout: four stages in one row with a chevron between each pair. */
+  @media (width >= 64rem) {
+    .funnel {
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: start;
+    }
+
+    .funnel__chevron {
+      display: grid;
+      place-items: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      margin-block-start: 1.75rem;
+      border: 1px solid var(--night-line);
+      border-radius: 50%;
+    }
+  }
+
+  /* Small phones stack the stages in a single column. */
+  @media (width < 32rem) {
+    .funnel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

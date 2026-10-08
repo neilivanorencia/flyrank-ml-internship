@@ -1,0 +1,169 @@
+---
+/**
+ * The text table of the numbers behind a chart, shown inside the chart's dialog.
+ * Rows are plain text cells, so the table is the accessible and copyable version of what the chart draws.
+ */
+
+/** A table column heading, with an optional color swatch that ties it to a legend entry in the chart. */
+interface Column {
+  readonly label: string;
+  readonly swatch?: "accent" | "data-a" | "data-b" | "data-c" | "ink-body" | "line";
+}
+
+/** The headings and cells for one table. */
+interface Props {
+  columns: readonly Column[];
+  /** Highlights the last row with a background band, for a total or result row. */
+  emphasizeLast?: boolean | undefined;
+  /** The body rows as text cells, where the first cell of each row is its row heading. */
+  rows: readonly (readonly string[])[];
+}
+
+const { columns, emphasizeLast = false, rows } = Astro.props;
+/** The index of the last row, used to style the closing and emphasized rows. */
+const lastIndex = rows.length - 1;
+---
+
+<table class="numbers-table">
+  <thead>
+    <tr>
+      {columns.map((column) => (
+        <th scope="col">
+          <span class="numbers-table__heading">
+            {column.swatch !== undefined && (
+              <span
+                class={`numbers-table__swatch numbers-table__swatch--${column.swatch}`}
+                aria-hidden="true"
+              />
+            )}
+            {column.label}
+          </span>
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {/* The first cell of each row is a row heading and the rest are data cells. */}
+    {rows.map((row, rowIndex) => (
+      <tr
+        class:list={{
+          "numbers-table__row--before-band": emphasizeLast && rowIndex === lastIndex - 1,
+          "numbers-table__row--emphasis": emphasizeLast && rowIndex === lastIndex,
+          "numbers-table__row--last": rowIndex === lastIndex,
+        }}
+      >
+        {row.map((cell, index) => (index === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .numbers-table {
+    width: 100%;
+
+    /* Stops the columns from squeezing, so a wide table scrolls inside its dialog instead. */
+    min-width: max-content;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--dialog-ink);
+    border-spacing: 0;
+    border-collapse: separate;
+  }
+
+  .numbers-table th,
+  .numbers-table td {
+    padding: var(--space-3) var(--space-4);
+    font-weight: 500;
+    text-align: end;
+    white-space: nowrap;
+    border-block-end: 1px solid var(--dialog-line);
+  }
+
+  .numbers-table tbody th {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--dialog-ink);
+  }
+
+  .numbers-table thead th {
+    font-size: 0.6875rem;
+    color: var(--dialog-ink-2);
+    background-color: var(--dialog-soft);
+    border-block-end: 0;
+  }
+
+  .numbers-table th:first-child {
+    text-align: start;
+  }
+
+  .numbers-table thead th:first-child {
+    border-start-start-radius: var(--radius-chip);
+    border-end-start-radius: var(--radius-chip);
+  }
+
+  .numbers-table thead th:last-child {
+    border-start-end-radius: var(--radius-chip);
+    border-end-end-radius: var(--radius-chip);
+  }
+
+  .numbers-table__heading {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .numbers-table__swatch {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 2px;
+  }
+
+  .numbers-table__swatch--accent {
+    background-color: var(--accent);
+  }
+
+  .numbers-table__swatch--data-a {
+    background-color: var(--data-a);
+  }
+
+  .numbers-table__swatch--data-b {
+    background-color: var(--data-b);
+  }
+
+  .numbers-table__swatch--data-c {
+    background-color: var(--data-c);
+  }
+
+  .numbers-table__swatch--ink-body {
+    background-color: var(--dialog-ink);
+  }
+
+  .numbers-table__swatch--line {
+    background-color: var(--dialog-line);
+  }
+
+  .numbers-table .numbers-table__row--emphasis > * {
+    background-color: var(--dialog-emphasis);
+    border-block-end-color: transparent;
+  }
+
+  .numbers-table .numbers-table__row--emphasis > :first-child {
+    border-start-start-radius: var(--radius-chip);
+    border-end-start-radius: var(--radius-chip);
+  }
+
+  .numbers-table .numbers-table__row--emphasis > :last-child {
+    border-start-end-radius: var(--radius-chip);
+    border-end-end-radius: var(--radius-chip);
+  }
+
+  /* The row above the emphasized band drops its divider, so the band does not sit on a line. */
+  .numbers-table .numbers-table__row--before-band > * {
+    border-block-end-color: transparent;
+  }
+
+  .numbers-table .numbers-table__row--last > * {
+    border-block-end: 0;
+  }
+</style>

@@ -1,0 +1,76 @@
+{/* The one shared tooltip bubble that `@/scripts/tooltips.ts` fills and moves for every chart on the page. */}
+<div class="chart-tooltip" popover="manual" aria-hidden="true" data-chart-tooltip></div>
+{/* A live region that repeats the tooltip text, because the bubble itself is hidden from assistive tech. */}
+<p class="visually-hidden" aria-live="polite" data-chart-live></p>
+
+<script>
+  import "@/scripts/tooltips.ts";
+</script>
+
+<style>
+  .chart-tooltip {
+    position: fixed;
+
+    /* The popover starts hidden and takes its place from the script, so the browser's default centering is cleared. */
+    inset: auto;
+    display: none;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: var(--space-2) var(--space-3);
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--on-night-2);
+
+    /* Lets the pointer pass through so the bubble never blocks the mark under it. */
+    pointer-events: none;
+    background-color: var(--night-raised);
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-chip);
+    box-shadow: var(--shadow-float);
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 0.25rem));
+    transition:
+      opacity 140ms ease-out,
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      overlay 180ms allow-discrete,
+      display 180ms allow-discrete;
+
+    &:popover-open {
+      display: flex;
+      opacity: 1;
+      transform: translate(-50%, -100%);
+    }
+
+    /* The script sets `data-below` when there is no room above the mark, so the bubble drops below it. */
+    &[data-below]:popover-open {
+      transform: translate(-50%, 0);
+    }
+
+    :global(strong) {
+      font-size: 0.8125rem;
+      color: var(--on-night);
+    }
+  }
+
+  :global([data-tooltips] [data-label]) {
+    transition: opacity 150ms ease-out;
+  }
+
+  /* While one mark is active, every other mark in the chart dims. */
+  :global([data-tooltips]:has([data-active]) [data-label]:not([data-active])) {
+    opacity: 0.35;
+  }
+
+  :global([data-tooltips]:focus-visible) {
+    border-radius: var(--radius-chip);
+    box-shadow: inset 0 0 0 2px var(--accent-ink);
+  }
+
+  /* Gives the bubble a starting state so it fades in when the popover opens. */
+  @starting-style {
+    .chart-tooltip:popover-open {
+      opacity: 0;
+    }
+  }
+</style>

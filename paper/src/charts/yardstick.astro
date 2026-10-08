@@ -1,0 +1,384 @@
+---
+/**
+ * A compact card that states the range of normal click rates against the flat rule, with a dialog that opens the full chart.
+ */
+
+import { extent } from "d3-array";
+
+import SerpHero from "@/charts/serp-hero.astro";
+import { formatTwo, linearTrack, trackStyle } from "@/charts/scales.ts";
+import ChartDialog from "@/components/chart-dialog.astro";
+import DialogTrigger from "@/components/dialog-trigger.astro";
+import SourceLink from "@/components/source-link.astro";
+import ctrByPosition from "@/data/ctr-by-position.json";
+import type { CtrRow } from "@/data/types";
+import toCsv from "@/lib/csv";
+
+/** The last Google position the card covers. */
+const LAST_POSITION = 13;
+/** The click rate in percent below which the flat rule flags a page. */
+const FLAT_RULE_PCT = 0.5;
+/** The click rate in percent at the end of the column track, a little above the flat rule so the rule line sits inside the chart. */
+const TRACK_MAX_PCT = 0.55;
+/** The id that ties the trigger button to its dialog. */
+const DIALOG_ID = "every-position";
+
+/** The click-through rows for positions 1 to `LAST_POSITION`, typed from the extracted JSON. */
+const rows = (ctrByPosition as readonly CtrRow[]).filter((row) => row.position <= LAST_POSITION);
+/** Maps a click rate in percent onto the 0 to 100 column track. */
+const track = linearTrack(0, TRACK_MAX_PCT);
+/** The lowest and highest normal click rates, which fall back to 0 only if there are no rows. */
+const [lowest = 0, highest = 0] = extent(rows, (row) => row.ctrPct);
+/** Where the flat rule line sits along the track, as a CSS percentage. */
+const rulePosition = trackStyle(track(FLAT_RULE_PCT));
+
+/** The click rates as CSV text, passed to the dialog. */
+const csv = toCsv(
+  ["Position", "Normal click rate (%)"],
+  rows.map((row) => [String(row.position), formatTwo(row.ctrPct)])
+);
+/** The text description of the chart, because the chart itself is drawn as an image with no readable parts. */
+const summary = `Normal click rate at positions 1 to ${LAST_POSITION} runs from ${formatTwo(lowest)}% to ${formatTwo(highest)}%, always below the flat ${formatTwo(FLAT_RULE_PCT)}% rule. Open the full chart for every value.`;
+---
+
+<div class="yardstick">
+  {/* The eyebrow label and the flat rule pill. */}
+  <div class="yardstick__top">
+    <p class="yardstick__eyebrow">normal click rate, by position</p>
+    <p class="yardstick__rule-pill">flat rule {FLAT_RULE_PCT.toFixed(1)}%</p>
+  </div>
+  {/* The headline range of normal click rates. */}
+  <div class="yardstick__stat">
+    <p class="yardstick__number">
+      {formatTwo(lowest)}% to {formatTwo(highest)}%
+    </p>
+    <p class="yardstick__sub">
+      At every position from 1 to {LAST_POSITION}, pages click below the flat rule's{" "}
+      {FLAT_RULE_PCT.toFixed(1)}% line.
+    </p>
+  </div>
+  {/* One column per position from 1 to 13, with the flat rule line drawn across them. */}
+  <div
+    class="yardstick__chart"
+    role="img"
+    data-chart
+    aria-label={summary}
+    style={`--rule: ${rulePosition}`}
+  >
+    <ol class="yardstick__field">
+      {/* The line at the flat rule's height, drawn over the columns. */}
+      <li class="yardstick__rule" data-draw aria-hidden="true" />
+      {rows.map((row) => (
+        <li
+          class:list={["yardstick__column", { "yardstick__column--best": row.ctrPct === highest }]}
+        >
+          {/* The tinted gap between each bar and the rule, which is what the rule calls missing. */}
+          <span
+            class="yardstick__gap"
+            data-fade
+            style={`bottom: ${trackStyle(track(row.ctrPct))}; height: ${trackStyle(track(FLAT_RULE_PCT) - track(row.ctrPct))}`}
+          />
+          <span
+            class="yardstick__bar"
+            data-grow="y"
+            style={`height: ${trackStyle(track(row.ctrPct))}`}
+          />
+        </li>
+      ))}
+    </ol>
+    {/* Position numbers under the columns, with the best position emphasized. */}
+    <ol class="yardstick__axis">
+      {rows.map((row) => (
+        <li class:list={["yardstick__tick", { "yardstick__tick--best": row.ctrPct === highest }]}>
+          {row.position}
+        </li>
+      ))}
+    </ol>
+  </div>
+  {/* Legend for the bars and the gap segments. */}
+  <ul class="yardstick__legend">
+    <li class="yardstick__key">
+      <span class="yardstick__swatch yardstick__swatch--rate" aria-hidden="true"></span>
+      normal click rate
+    </li>
+    <li class="yardstick__key">
+      <span class="yardstick__swatch yardstick__swatch--gap" aria-hidden="true"></span>
+      what the rule calls missing
+    </li>
+  </ul>
+  <div class="yardstick__foot">
+    {/* Opens the dialog that holds the full chart. */}
+    <DialogTrigger dialogId={DIALOG_ID} icon="bars" label="See every position" tone="dark" />
+    <p class="yardstick__source">
+      <SourceLink id="signal-audit" />
+    </p>
+  </div>
+</div>
+
+{/* The dialog sits outside the card and is opened by the trigger inside it. */}
+<ChartDialog
+  csv={csv}
+  id={DIALOG_ID}
+  kind="every position, 1 to 13"
+  label="The yardstick"
+  sources={["signal-audit", "capstone"]}
+  subtitle="The share of searchers who click a page at each position, across every page in the warehouse."
+  title="Normal click rate at each Google position"
+  tone="dark"
+>
+  <SerpHero />
+</ChartDialog>
+
+<style>
+  .yardstick {
+    /* Colors the source link for the dark card. */
+    --source-link-ink: var(--accent);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    padding: var(--space-5) var(--space-5) var(--space-4);
+
+    /* A faint highlight fading out down the top third, over the translucent raised surface. */
+    background:
+      linear-gradient(180deg, #ffffff0f, #fff0 35%),
+      color-mix(in srgb, var(--night-raised) 80%, transparent);
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-card);
+  }
+
+  .yardstick__top {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .yardstick__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--on-night-2);
+  }
+
+  .yardstick__rule-pill {
+    padding: 0.1875rem 0.5625rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--coral-soft);
+    white-space: nowrap;
+    background-color: var(--coral-wash);
+    border: 1px solid var(--coral-line);
+    border-radius: var(--radius-pill);
+  }
+
+  .yardstick__stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .yardstick__number {
+    font-size: clamp(1.625rem, 1.3rem + 1vw, 1.875rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--on-night);
+    letter-spacing: -0.04em;
+  }
+
+  .yardstick__sub {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--on-night-2);
+  }
+
+  .yardstick__chart {
+    --field-height: 7rem;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .yardstick__field {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    gap: var(--space-2);
+    height: var(--field-height);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .yardstick__rule {
+    position: absolute;
+
+    /* Raised to the rule's height using the custom property set on the chart. */
+    inset-block-end: var(--rule);
+    inset-inline: 0;
+
+    /* Draws the rule above the bars and gap segments. */
+    z-index: 1;
+    height: 2px;
+    background-color: var(--coral);
+  }
+
+  .yardstick__column {
+    position: relative;
+    height: 100%;
+  }
+
+  .yardstick__bar {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 0;
+    background-color: color-mix(in srgb, var(--accent) 70%, transparent);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .yardstick__column--best .yardstick__bar {
+    background-color: var(--accent);
+  }
+
+  .yardstick__gap {
+    position: absolute;
+    inset-inline: 0;
+    background-color: var(--coral-wash);
+
+    /* A translucent coral edge in the same hue as the gap swatch in the legend. */
+    border-inline: 1px solid #ff8a5b40;
+    border-radius: 3px 3px 0 0;
+  }
+
+  .yardstick__axis {
+    display: grid;
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--on-night-2);
+    text-align: center;
+    list-style: none;
+  }
+
+  .yardstick__tick--best {
+    color: var(--on-night);
+  }
+
+  .yardstick__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--on-night-2);
+    list-style: none;
+  }
+
+  .yardstick__key {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .yardstick__swatch {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  .yardstick__swatch--rate {
+    background-color: var(--accent);
+    border-radius: 3px 3px 0 0;
+  }
+
+  .yardstick__swatch--gap {
+    background-color: #ff8a5b33;
+    border: 1px solid #ff8a5b80;
+    border-radius: 2px;
+  }
+
+  .yardstick__foot {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--night-line);
+  }
+
+  .yardstick__source {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--on-night-2);
+  }
+
+  /* Small tablets make the chart taller and widen the gaps between columns. */
+  @media (width >= 40rem) and (width < 48rem) {
+    .yardstick__chart {
+      --field-height: 9rem;
+    }
+
+    .yardstick__field,
+    .yardstick__axis {
+      gap: var(--space-3);
+    }
+  }
+
+  /* Phones stack the dialog button above the source link. */
+  @media (width < 40rem) {
+    .yardstick__foot {
+      flex-direction: column;
+      gap: var(--space-3);
+      align-items: stretch;
+    }
+
+    .yardstick__source {
+      text-align: center;
+    }
+  }
+
+  /* Tablets place the chart beside the stat and legend, with the footer across the bottom. */
+  @media (width >= 48rem) and (width < 64rem) {
+    .yardstick {
+      display: grid;
+      grid-template:
+        "top chart" auto
+        "stat chart" auto
+        "legend chart" 1fr
+        "foot foot" auto
+        / minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: var(--space-4) var(--space-7);
+      padding: var(--space-6) var(--space-6) var(--space-5);
+    }
+
+    .yardstick__top {
+      grid-area: top;
+    }
+
+    .yardstick__stat {
+      grid-area: stat;
+    }
+
+    .yardstick__legend {
+      flex-direction: column;
+      grid-area: legend;
+      align-self: start;
+    }
+
+    .yardstick__chart {
+      --field-height: 10.5rem;
+
+      grid-area: chart;
+      align-self: center;
+    }
+
+    .yardstick__foot {
+      grid-area: foot;
+    }
+  }
+</style>

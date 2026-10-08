@@ -1,0 +1,283 @@
+---
+/**
+ * A horizontal bar chart of the normal click rate at Google positions 1 to 13 against the flat 0.5% rule.
+ * It shows that every position clicks below the rule, and it opens inside the yardstick dialog as the detailed view.
+ */
+
+import ctrByPosition from "@/data/ctr-by-position.json";
+import type { CtrRow } from "@/data/types";
+
+import { formatTwo, linearTrack, trackStyle } from "@/charts/scales.ts";
+
+/** The last Google position the chart shows. */
+const LAST_POSITION = 13;
+/** The click-through rows for positions 1 to `LAST_POSITION`, typed from the extracted JSON. */
+const rows = (ctrByPosition as readonly CtrRow[]).filter((row) => row.position <= LAST_POSITION);
+/** The last position on the first page of results, after which a page break line is drawn. */
+const PAGE_BREAK_AFTER = 10;
+/** The click rate in percent below which the flat rule flags a page. */
+const FLAT_RULE_PCT = 0.5;
+/** The click rate in percent at the end of the bar track, a little above the flat rule so the rule line sits inside the chart. */
+const TRACK_MAX_PCT = 0.55;
+/** Maps a click rate in percent onto the 0 to 100 bar track. */
+const track = linearTrack(0, TRACK_MAX_PCT);
+/** Where the flat rule line sits along the track, as a CSS percentage. */
+const rulePosition = trackStyle(track(FLAT_RULE_PCT));
+
+/** The callout chips for the positions the story points out, keyed by position. */
+const NOTES: Readonly<Record<number, { label: string; tone: "night-coral" | "night-mint" }>> = {
+  1: { label: "below 2 and 3", tone: "night-coral" },
+  11: { label: "beats 7 to 10", tone: "night-mint" },
+  2: { label: "best clicked", tone: "night-mint" },
+};
+---
+
+<div class="serp-hero-wrap">
+  {/* Legend that explains the bars and the rule line. */}
+  <ul class="serp-hero__legend">
+    <li class="serp-hero__key">
+      <span class="serp-hero__swatch serp-hero__swatch--rate" aria-hidden="true"></span>
+      normal click rate
+    </li>
+    <li class="serp-hero__key">
+      <span class="serp-hero__swatch serp-hero__swatch--rule" aria-hidden="true"></span>
+      flat 0.5% rule, flags anything below
+    </li>
+  </ul>
+  <div
+    class="serp-hero"
+    role="group"
+    data-tooltips
+    aria-label="Normal click rate by Google position, positions 1 to 13"
+    style={`--rule: ${rulePosition}`}
+  >
+    <div class="serp-hero__axis" aria-hidden="true">
+      <span class="serp-hero__axis-label">pos</span>
+      <span class="serp-hero__cut">flat rule 0.5%</span>
+    </div>
+    {/* One row per position, with a page break marker after the last position on page one. */}
+    <ol class="serp-hero__rows">
+      {rows.map((row) => (
+        <>
+          <li
+            class="serp-hero__row"
+            data-label={`Position ${row.position}`}
+            data-value={`${formatTwo(row.ctrPct)}%`}
+          >
+            <span class="serp-hero__pos">{row.position}</span>
+            <span class="serp-hero__track">
+              <span class="serp-hero__bar" style={`width: ${trackStyle(track(row.ctrPct))}`} />
+            </span>
+            <span class="serp-hero__value">{formatTwo(row.ctrPct)}%</span>
+            <span class="serp-hero__note">
+              {/* A chip appears only for positions listed in NOTES. */}
+              {NOTES[row.position] !== undefined && (
+                <span
+                  class:list={[
+                    "serp-hero__chip",
+                    `serp-hero__chip--${NOTES[row.position]?.tone ?? "night-mint"}`,
+                  ]}
+                >
+                  {NOTES[row.position]?.label}
+                </span>
+              )}
+            </span>
+          </li>
+          {row.position === PAGE_BREAK_AFTER && (
+            <li class="serp-hero__break" aria-hidden="true">
+              <span class="serp-hero__break-label">page 2 of results</span>
+            </li>
+          )}
+        </>
+      ))}
+    </ol>
+  </div>
+  <p class="serp-hero__caption">
+    Every bar stops short of the coral line, so the flat rule would flag a page clicking exactly as
+    normal at any position from 1 to 13. That is why each page is judged against its own position
+    and its own site instead.
+  </p>
+</div>
+
+<style>
+  .serp-hero-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .serp-hero__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--on-night-2);
+    list-style: none;
+  }
+
+  .serp-hero__key {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .serp-hero__swatch--rate {
+    width: 0.875rem;
+    height: 0.5rem;
+    background-color: var(--accent);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .serp-hero__swatch--rule {
+    width: 2px;
+    height: 0.75rem;
+    background-color: var(--coral);
+  }
+
+  .serp-hero__caption {
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--on-night-2);
+  }
+
+  .serp-hero {
+    /* Column widths for position, bar track, value, and note, shared by the axis row and every data row. */
+    --row-columns: 1.75rem minmax(0, 1fr) 3rem minmax(0, 7.5rem);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    color: var(--on-night-2);
+  }
+
+  .serp-hero__axis {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--row-columns);
+    column-gap: var(--space-3);
+    align-items: center;
+    height: 1.375rem;
+    font-size: 0.6875rem;
+  }
+
+  .serp-hero__axis-label {
+    grid-column: 1;
+  }
+
+  .serp-hero__cut {
+    position: relative;
+    grid-column: 2;
+    justify-self: start;
+    padding: 0 var(--space-2);
+    margin-inline-start: var(--rule);
+    font-size: 0.625rem;
+    color: var(--coral-soft);
+    white-space: nowrap;
+    background-color: var(--coral-wash);
+    border: 1px solid var(--coral-line);
+    border-radius: var(--radius-pill);
+
+    /* Shifts the pill left so its right edge ends at the rule line. */
+    transform: translateX(-100%);
+  }
+
+  .serp-hero__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .serp-hero__row {
+    display: grid;
+    grid-template-columns: var(--row-columns);
+    column-gap: var(--space-3);
+    align-items: center;
+    min-height: 1.375rem;
+    font-size: 0.75rem;
+  }
+
+  .serp-hero__track {
+    position: relative;
+    display: block;
+    height: 1.375rem;
+
+    /* A dashed vertical line at the flat rule, repeated in every row so it reads as one line down the chart. */
+    &::after {
+      position: absolute;
+      inset-block: 0.3125rem;
+      inset-inline-start: var(--rule);
+      width: 2px;
+      content: "";
+      background: repeating-linear-gradient(
+        to bottom,
+        var(--coral) 0 0.5rem,
+        transparent 0.5rem 0.75rem
+      );
+    }
+  }
+
+  .serp-hero__bar {
+    position: absolute;
+    inset-block: 0.4375rem;
+    inset-inline-start: 0;
+    background-color: var(--accent);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .serp-hero__value {
+    font-weight: 500;
+    color: var(--on-night);
+  }
+
+  .serp-hero__chip {
+    display: inline-block;
+    padding: 0.125rem var(--space-2);
+    font-size: 0.625rem;
+    white-space: nowrap;
+    border-radius: var(--radius-pill);
+  }
+
+  .serp-hero__chip--night-coral {
+    color: var(--coral-soft);
+    background-color: var(--coral-wash);
+  }
+
+  .serp-hero__chip--night-mint {
+    color: var(--mint-soft);
+    background-color: var(--night-mint-wash);
+  }
+
+  .serp-hero__break {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    padding-block: var(--space-1);
+    font-size: 0.6875rem;
+
+    /* A rule line that fills the rest of the break row after its label. */
+    &::after {
+      flex: 1;
+      height: 1px;
+      content: "";
+      background-color: var(--night-line);
+    }
+  }
+
+  /* Narrow screens drop the note column to give the bars more room. */
+  @media (width < 36rem) {
+    .serp-hero {
+      --row-columns: 1.5rem minmax(0, 1fr) 2.75rem;
+    }
+
+    .serp-hero__note {
+      display: none;
+    }
+  }
+</style>

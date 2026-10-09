@@ -1,0 +1,227 @@
+---
+/**
+ * A pictogram that shows how many of each method's 50 picks were real shortfalls in the sealed month.
+ * It compares the model, Rule B, and random picks at the base rate, one row of 50 squares each.
+ */
+
+import Figure from "@/components/figure.astro";
+import sealedMonth from "@/data/sealed-month.json";
+import type { SealedRow } from "@/data/types";
+
+import { formatTwo, percentText } from "@/charts/scales.ts";
+
+/** The text this figure takes from the section that places it. */
+interface Props {
+  caption: string;
+}
+
+const { caption } = Astro.props;
+
+/** The sealed month results, one row per scorer, typed from the extracted JSON. */
+const rows = sealedMonth as readonly SealedRow[];
+/** How many pages each method picks, which is also how many squares each row draws. */
+const PICKS = 50;
+/** The divisor that turns a percentage into a share between 0 and 1. */
+const PERCENT_TO_SHARE = 100;
+
+/** The Rule B row, found by its scorer name. */
+const rule = rows.find((row) => row.scorer.startsWith("Rule B"));
+/** The primary model row, found by the scorer name that mentions unseen clients. */
+const model = rows.find((row) => row.scorer.includes("unseen clients"));
+// Stops the build when either row is missing instead of drawing a partial chart.
+if (rule === undefined || model === undefined) {
+  throw new Error("sealed-month.json is missing the rule or the primary model row.");
+}
+
+/** One method's bar in the chart, ready to render. */
+interface Pick {
+  /** The supporting figure printed beside the summary. */
+  readonly detail: string;
+  /** How many of the 50 picks were real shortfalls. */
+  readonly hits: number;
+  readonly label: string;
+  /** The hit count as text, such as `37 of 50`. */
+  readonly summary: string;
+  /** Picks the color of the filled squares. */
+  readonly tone: "model" | "random" | "rule";
+}
+
+/** The values `makePick` needs to build a `Pick`. */
+interface PickInput {
+  readonly detail: string;
+  readonly hits: number;
+  readonly label: string;
+  /** Text placed before the summary, such as `about ` for an estimate. */
+  readonly prefix?: string;
+  readonly tone: Pick["tone"];
+}
+
+/**
+ * Builds a `Pick` and writes its summary text from the hit count.
+ * @param input - The detail, hit count, label, optional summary prefix, and tone for one method.
+ * @returns The pick with its summary set to the prefix, the hits, and the pick count.
+ */
+const makePick = ({ detail, hits, label, prefix = "", tone }: PickInput): Pick => ({
+  detail,
+  hits,
+  label,
+  summary: `${prefix}${hits} of ${PICKS}`,
+  tone,
+});
+
+/** The three bars in order: the model, Rule B, and random picks. */
+const pickRows = [
+  makePick({
+    detail: `precision ${formatTwo(model.precisionAt50)}`,
+    // Precision is a share of the 50 picks, so scaling it by the pick count gives whole hits.
+    hits: Math.round(model.precisionAt50 * PICKS),
+    label: "Model",
+    tone: "model",
+  }),
+  makePick({
+    detail: `precision ${formatTwo(rule.precisionAt50)}`,
+    hits: Math.round(rule.precisionAt50 * PICKS),
+    label: "Rule B",
+    tone: "rule",
+  }),
+  makePick({
+    detail: `base rate ${percentText(rule.baseRatePct)}`,
+    // Random picks hit at the base rate, so the expected hits are approximate.
+    hits: Math.round((rule.baseRatePct / PERCENT_TO_SHARE) * PICKS),
+    label: "Random picks",
+    prefix: "about ",
+    tone: "random",
+  }),
+];
+
+/** The table of numbers that `Figure` offers as a text alternative to the chart. */
+const numbers = {
+  columns: ["Picks", "Picks with a real shortfall", "Detail"],
+  rows: pickRows.map((row) => [row.label, row.summary, row.detail]),
+};
+---
+
+<Figure
+  id="fifty-picks"
+  label="Sealed month"
+  source="validation-audit"
+  tone="band"
+  title="Fifty picks each on the sealed month, May to June 2026"
+  titleHidden
+  caption={caption}
+  numbers={numbers}
+>
+  <div
+    class="fifty-picks"
+    role="group"
+    data-scrub="rows"
+    data-tooltips
+    aria-label="Real shortfalls among each method's 50 picks"
+  >
+    {/* One block per method, with a header line above its row of squares. */}
+    {pickRows.map((row) => (
+      <div class="fifty-picks__pick" data-label={row.label} data-value={row.summary}>
+        <p class="fifty-picks__head">
+          <span class="fifty-picks__name">{row.label}</span>
+          <span class="fifty-picks__detail">
+            {row.summary}
+            <span class="fifty-picks__gap" />
+            {row.detail}
+          </span>
+        </p>
+        <span class="fifty-picks__squares" aria-hidden="true" data-scrub-row={row.hits}>
+          {/* The first `hits` squares take the method's color and the rest stay empty. */}
+          {Array.from({ length: PICKS }, (_, index) => (
+            <span
+              data-scrub-item
+              class:list={[
+                "fifty-picks__square",
+                { [`fifty-picks__square--${row.tone}`]: index < row.hits },
+              ]}
+            />
+          ))}
+        </span>
+      </div>
+    ))}
+  </div>
+</Figure>
+
+<style>
+  .fifty-picks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .fifty-picks__pick {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .fifty-picks__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .fifty-picks__name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--band-ink);
+  }
+
+  .fifty-picks__detail {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--band-ink-2);
+  }
+
+  /* Spacer between the summary and the detail text. */
+  .fifty-picks__gap {
+    display: inline-block;
+    width: var(--space-3);
+  }
+
+  .fifty-picks__squares {
+    display: grid;
+
+    /* Two rows of 25 squares on narrow screens. */
+    grid-template-columns: repeat(25, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .fifty-picks__square {
+    height: 1.375rem;
+    background-color: var(--band-empty);
+    border-radius: 3px;
+    transition: background-color 160ms ease-out;
+  }
+
+  .fifty-picks__square--model {
+    background-color: var(--band-model);
+  }
+
+  .fifty-picks__square--rule {
+    background-color: var(--band-rule);
+  }
+
+  .fifty-picks__square--random {
+    background-color: var(--band-ink);
+  }
+
+  /* One row of 50 squares once there is room. */
+  @media (width >= 48rem) {
+    .fifty-picks__squares {
+      grid-template-columns: repeat(50, minmax(0, 1fr));
+      gap: 4px;
+    }
+  }
+
+  /* Squares marked `data-off` fall back to the empty color. */
+  .fifty-picks__square[data-off] {
+    background-color: var(--band-empty);
+  }
+</style>

@@ -1,0 +1,272 @@
+---
+/**
+ * Fig. 4, grouped columns that trade list size against the hit rate and the share of June's missed clicks each list captures.
+ * The chosen list is highlighted, so a reader sees why the review list stops at the size it does.
+ */
+
+import { range } from "d3-array";
+
+import Figure from "@/components/figure.astro";
+import queueTradeoff from "@/data/queue-tradeoff.json";
+import type { QueueRow } from "@/data/types";
+
+import {
+  formatInteger,
+  linearTrack,
+  percentText,
+  trackStyle,
+  wholePercentText,
+} from "@/charts/scales.ts";
+
+/** The text this figure takes from the section that places it. */
+interface Props {
+  caption: string;
+  subtitle: string;
+  title: string;
+}
+
+const { caption, subtitle, title } = Astro.props;
+
+/** The queue rows, one per list size, typed from the extracted JSON. */
+const rows = queueTradeoff as readonly QueueRow[];
+/** The top of the value axis, because both measures are percentages. */
+const PERCENT_MAX = 100;
+/** Percentage points between gridlines. */
+const GRID_STEP = 50;
+/** The axis values where a tick label and a gridline are drawn. */
+const GRID_LINES = range(0, PERCENT_MAX + GRID_STEP, GRID_STEP);
+/** Maps a percentage onto the 0 to 100 track used for heights and gridlines. */
+const track = linearTrack(0, PERCENT_MAX);
+
+/**
+ * Picks the short label printed under a group of columns.
+ * @param row - The queue row to label.
+ * @returns A fixed short label for the chosen list, and the list name for the others.
+ */
+const shortLabel = (row: QueueRow): string => {
+  // The chosen list gets a fixed short label under its columns.
+  if (row.chosen) {
+    return "Top 50, capped";
+  }
+  return row.list;
+};
+
+/** The table of numbers that `Figure` offers as a text alternative to the chart. */
+const numbers = {
+  columns: [
+    "List",
+    "Pages",
+    "Clients",
+    "Hit rate, pages left alone",
+    "Share of June's missed clicks",
+  ],
+  emphasizeLast: true,
+  rows: rows.map((row) => [
+    row.list,
+    formatInteger(row.pages),
+    formatInteger(row.clients),
+    wholePercentText(row.hitUntouchedPct),
+    percentText(row.missedClicksSharePct),
+  ]),
+};
+---
+
+<Figure
+  id="queue-tradeoff"
+  label="Fig. 4"
+  source="action-playbook"
+  title={title}
+  subtitle={subtitle}
+  caption={caption}
+  legend={[
+    { label: "Still short in June (hit rate)", tone: "ink-body" },
+    { label: "Share of June's missed clicks", tone: "data-c" },
+  ]}
+  numbers={numbers}
+>
+  <div
+    class="queue-tradeoff"
+    role="group"
+    data-chart
+    data-tooltips
+    aria-label="Hit rate and share of missed clicks, by list size"
+  >
+    {/* Percent labels down the left edge, hidden from assistive tech because the numbers table covers them. */}
+    <div class="queue-tradeoff__axis" aria-hidden="true">
+      {GRID_LINES.map((value) => (
+        <span class="queue-tradeoff__tick" style={`--at: ${trackStyle(track(value))}`}>
+          {wholePercentText(value)}
+        </span>
+      ))}
+    </div>
+    <div class="queue-tradeoff__field">
+      <div class="queue-tradeoff__grid" aria-hidden="true">
+        {GRID_LINES.map((value) => (
+          <span class="queue-tradeoff__line" style={`--at: ${trackStyle(track(value))}`} />
+        ))}
+      </div>
+      {/* One group per list size, each with a hit rate column and a missed clicks share column. */}
+      <ol class="queue-tradeoff__plot">
+        {rows.map((row) => (
+          <li
+            class:list={["queue-tradeoff__group", { "queue-tradeoff__group--chosen": row.chosen }]}
+            data-label={row.list}
+            data-value={`${wholePercentText(row.hitUntouchedPct)} hit rate, ${percentText(row.missedClicksSharePct)} of missed clicks`}
+          >
+            <span class="queue-tradeoff__bars">
+              <span
+                class="queue-tradeoff__bar queue-tradeoff__bar--hit"
+                data-grow="y"
+                style={`height: ${trackStyle(track(row.hitUntouchedPct))}`}
+              >
+                <span class="queue-tradeoff__value" data-fade>
+                  {wholePercentText(row.hitUntouchedPct)}
+                </span>
+              </span>
+              <span
+                class="queue-tradeoff__bar queue-tradeoff__bar--share"
+                data-grow="y"
+                style={`height: ${trackStyle(track(row.missedClicksSharePct))}`}
+              >
+                <span class="queue-tradeoff__value" data-fade>
+                  {percentText(row.missedClicksSharePct)}
+                </span>
+              </span>
+            </span>
+            <span class="queue-tradeoff__label">{shortLabel(row)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</Figure>
+
+<style>
+  .queue-tradeoff {
+    --plot-height: 13.75rem;
+    --label-height: 2.5rem;
+
+    /* Space above the columns for their value labels. */
+    --headroom: 1.75rem;
+
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+
+    /* Keeps the six groups wide enough to read. */
+    min-width: 38rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--ink-2);
+  }
+
+  .queue-tradeoff__axis {
+    position: relative;
+    height: var(--plot-height);
+    margin-block-start: var(--headroom);
+  }
+
+  .queue-tradeoff__tick {
+    position: absolute;
+    inset-block-end: var(--at);
+    inset-inline-start: 0;
+    translate: 0 50%;
+  }
+
+  .queue-tradeoff__field {
+    position: relative;
+    min-width: 0;
+  }
+
+  .queue-tradeoff__grid {
+    position: absolute;
+    inset-block: var(--headroom) var(--label-height);
+    inset-inline: 0;
+  }
+
+  .queue-tradeoff__line {
+    position: absolute;
+    inset-block-end: var(--at);
+    inset-inline: 0;
+    height: 1px;
+    background-color: var(--line);
+  }
+
+  .queue-tradeoff__plot {
+    position: relative;
+    display: grid;
+
+    /* One column per list size. */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-1);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .queue-tradeoff__group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block-start: var(--headroom);
+    border-radius: 0.75rem;
+  }
+
+  .queue-tradeoff__bars {
+    display: flex;
+    gap: 0.375rem;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    height: var(--plot-height);
+  }
+
+  .queue-tradeoff__bar {
+    position: relative;
+    width: clamp(0.75rem, 26%, 1.375rem);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .queue-tradeoff__bar--hit {
+    background-color: var(--ink-body);
+  }
+
+  .queue-tradeoff__bar--share {
+    background-color: var(--data-c);
+  }
+
+  .queue-tradeoff__value {
+    position: absolute;
+    inset-block-end: calc(100% + 0.25rem);
+    font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* The hit rate label aligns right and the share label aligns left, so the two labels over a pair do not overlap. */
+  .queue-tradeoff__bar--hit .queue-tradeoff__value {
+    inset-inline-end: 0;
+  }
+
+  .queue-tradeoff__bar--share .queue-tradeoff__value {
+    inset-inline-start: 0;
+  }
+
+  .queue-tradeoff__label {
+    display: grid;
+    place-items: center;
+    height: var(--label-height);
+    padding-inline: var(--space-1);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  /* The chosen list gets a tinted background and a bold label. */
+  .queue-tradeoff__group--chosen {
+    background-color: var(--accent-wash);
+
+    .queue-tradeoff__label {
+      font-weight: 600;
+      color: var(--ink);
+    }
+  }
+</style>

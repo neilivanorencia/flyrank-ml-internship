@@ -1,0 +1,202 @@
+---
+/**
+ * Fig. 2, paired bars that compare how often pages are short again next month, for pages that were short and pages that were not.
+ * It backs the claim that a shortfall persists, with the ratio between the two bars printed for each month pair.
+ */
+
+import Figure from "@/components/figure.astro";
+import persistence from "@/data/persistence.json";
+import type { PersistenceRow } from "@/data/types";
+
+import { formatInteger, formatOne, linearTrack, pairLabel, trackStyle } from "@/charts/scales.ts";
+
+/** The text this figure takes from the section that places it. */
+interface Props {
+  caption: string;
+  subtitle: string;
+  title: string;
+}
+
+const { caption, subtitle, title } = Astro.props;
+
+/** The persistence rows, one per month pair, typed from the extracted JSON. */
+const rows = persistence as readonly PersistenceRow[];
+/** The percentage at the end of the bar track. */
+const TRACK_MAX_PCT = 70;
+/** Maps a percentage onto the 0 to 100 bar track. */
+const track = linearTrack(0, TRACK_MAX_PCT);
+
+/**
+ * Builds the label for a month pair row.
+ * @param row - The persistence row to label.
+ * @returns The month pair, followed by `, sealed` for the sealed pair.
+ */
+const labelOf = (row: PersistenceRow): string => {
+  // The sealed pair is the held-out final check, so its label says so.
+  if (row.sealed) {
+    return `${pairLabel(row.pair)}, sealed`;
+  }
+  return pairLabel(row.pair);
+};
+
+/** The table of numbers that `Figure` offers as a text alternative to the chart. */
+const numbers = {
+  columns: [
+    "Month pair",
+    "Pages short in month M",
+    // Columns with a swatch repeat the legend color of their bar.
+    { label: "Short again in M+1", swatch: "ink-body" as const },
+    "Pages not short in M",
+    { label: "Short in M+1", swatch: "line" as const },
+    "Ratio",
+  ],
+  emphasizeLast: true,
+  rows: rows.map((row) => [
+    labelOf(row),
+    formatInteger(row.shortInM),
+    `${formatOne(row.shortAgainPct)}%`,
+    formatInteger(row.notShort),
+    `${formatOne(row.notShortThenShortPct)}%`,
+    `${formatOne(row.ratio)}×`,
+  ]),
+};
+---
+
+<Figure
+  id="persistence"
+  label="Fig. 2"
+  source="validation-audit"
+  title={title}
+  subtitle={subtitle}
+  caption={caption}
+  legend={[
+    { label: "Short in month M", tone: "ink-body" },
+    { label: "Not short in month M", tone: "line" },
+  ]}
+  numbers={numbers}
+>
+  <ol
+    class="persistence"
+    data-chart
+    data-tooltips
+    aria-label="Share short again next month, by month pair"
+  >
+    {/* One entry per month pair, with a bar for each group and the ratio between them. */}
+    {rows.map((row) => (
+      <li class="persistence__pair">
+        <span class="persistence__label">{labelOf(row)}</span>
+        <span class="persistence__bars">
+          <span
+            class="persistence__row"
+            data-label={`${labelOf(row)}: short in month M`}
+            data-value={`${formatOne(row.shortAgainPct)}%`}
+          >
+            <span
+              class="persistence__bar persistence__bar--short"
+              data-grow="x"
+              style={`width: ${trackStyle(track(row.shortAgainPct))}`}
+            />
+            <span class="persistence__value" data-fade>
+              {formatOne(row.shortAgainPct)}%
+            </span>
+          </span>
+          <span
+            class="persistence__row"
+            data-label={`${labelOf(row)}: not short in month M`}
+            data-value={`${formatOne(row.notShortThenShortPct)}%`}
+          >
+            <span
+              class="persistence__bar persistence__bar--not-short"
+              data-grow="x"
+              style={`width: ${trackStyle(track(row.notShortThenShortPct))}`}
+            />
+            <span class="persistence__value" data-fade>
+              {formatOne(row.notShortThenShortPct)}%
+            </span>
+          </span>
+        </span>
+        {/* The ratio of the first bar to the second, shown as a pill. */}
+        <span class="persistence__ratio">{formatOne(row.ratio)}×</span>
+      </li>
+    ))}
+  </ol>
+</Figure>
+
+<style>
+  .persistence {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .persistence__pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
+  }
+
+  .persistence__label {
+    /* The label spans the full width above the bars on narrow screens. */
+    grid-column: 1 / -1;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+
+  .persistence__bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .persistence__row {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .persistence__bar {
+    flex: none;
+    height: 0.875rem;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .persistence__bar--short {
+    background-color: var(--ink-body);
+  }
+
+  .persistence__bar--not-short {
+    background-color: var(--line);
+  }
+
+  .persistence__value {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .persistence__ratio {
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+    border-radius: var(--radius-pill);
+  }
+
+  /* Wider screens move the label into its own column beside the bars. */
+  @media (width >= 40rem) {
+    .persistence__pair {
+      grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+    }
+
+    .persistence__label {
+      grid-column: auto;
+    }
+  }
+</style>

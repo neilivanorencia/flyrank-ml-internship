@@ -1,0 +1,348 @@
+---
+/**
+ * Fig. 3, two interval plots of the model's gap to Rule B, one for top-50 precision and one for missed clicks captured.
+ * Each test set gets a row with its point estimate and 95% interval, so a reader can see whether the interval clears zero.
+ */
+
+import { range } from "d3-array";
+
+import Figure from "@/components/figure.astro";
+import bootstrap from "@/data/bootstrap.json";
+import type { BootstrapRow, Interval } from "@/data/types";
+
+import {
+  formatSignedOne,
+  formatSignedTwo,
+  linearTrack,
+  pairLabel,
+  trackStyle,
+} from "@/charts/scales.ts";
+
+/** The text this figure takes from the section that places it. */
+interface Props {
+  caption: string;
+  subtitle: string;
+  title: string;
+}
+
+const { caption, subtitle, title } = Astro.props;
+
+/** The bootstrap rows, one per test set, typed from the extracted JSON. */
+const rows = bootstrap as readonly BootstrapRow[];
+
+/** The precision gap at the start of its track, set low enough that every interval fits. */
+const PRECISION_MIN = -0.15;
+/** The precision gap at the end of its track, set high enough that every interval fits. */
+const PRECISION_MAX = 0.25;
+/** The capture gap in points at the start of its track, set low enough that every interval fits. */
+const CAPTURE_MIN = -11;
+/** The capture gap in points at the end of its track, set high enough that every interval fits. */
+const CAPTURE_MAX = 2;
+/** Maps a precision gap onto the 0 to 100 track. */
+const precisionTrack = linearTrack(PRECISION_MIN, PRECISION_MAX);
+/** Maps a capture gap in points onto the 0 to 100 track. */
+const captureTrack = linearTrack(CAPTURE_MIN, CAPTURE_MAX);
+
+/** The spacing between precision axis ticks. */
+const PRECISION_STEP = 0.1;
+/** The highest precision tick, as a number of steps above zero. */
+const PRECISION_LAST_STEP = 2;
+/** The precision tick values, from -0.1 to 0.2. */
+const PRECISION_TICKS = range(-1, PRECISION_LAST_STEP + 1).map((step) => step * PRECISION_STEP);
+/** The spacing between capture axis ticks, in points. */
+const CAPTURE_STEP = 5;
+/** The lowest capture tick, as a number of steps below zero. */
+const CAPTURE_FIRST_STEP = -2;
+/** The capture tick values, from -10 to 0. */
+const CAPTURE_TICKS = range(CAPTURE_FIRST_STEP, 1).map((step) => step * CAPTURE_STEP);
+
+/**
+ * Builds the label for a test set row.
+ * @param row - The bootstrap row to label.
+ * @returns The month pair, followed by `, sealed` for the sealed test set.
+ */
+const labelOf = (row: BootstrapRow): string => {
+  // The sealed set is the held-out final check, so its label says so.
+  if (row.sealed) {
+    return `${pairLabel(row.testSet)}, sealed`;
+  }
+  return pairLabel(row.testSet);
+};
+
+/**
+ * Formats a capture gap in points with an explicit sign.
+ * @param value - The gap in percentage points.
+ * @returns The signed value with one decimal, and a minus sign for exactly zero.
+ */
+const captureText = (value: number): string => {
+  // The formatter would print a plus sign for zero, so zero is written with a minus sign here.
+  if (value === 0) {
+    return "−0.0";
+  }
+  return formatSignedOne(value);
+};
+
+/**
+ * Formats a precision interval as text.
+ * @param interval - The low and high ends of the 95% interval.
+ * @returns The signed ends joined by `to`.
+ */
+const precisionRange = (interval: Interval): string =>
+  `${formatSignedTwo(interval.low)} to ${formatSignedTwo(interval.high)}`;
+/**
+ * Formats a capture interval as text.
+ * @param interval - The low and high ends of the 95% interval, in points.
+ * @returns The signed ends joined by `to`.
+ */
+const captureRange = (interval: Interval): string =>
+  `${captureText(interval.low)} to ${captureText(interval.high)}`;
+
+/**
+ * Formats an axis tick label.
+ * @param value - The tick value.
+ * @param signed - The formatter that adds a sign to a value for this panel.
+ * @returns The signed value, or a plain zero without a plus sign.
+ */
+const tickText = (value: number, signed: (value: number) => string): string => {
+  // The zero tick marks the baseline, so it reads as a plain 0 instead of +0.
+  if (value === 0) {
+    return signed(0).replace("+", "");
+  }
+  return signed(value);
+};
+
+/** The two plot panels, each with its rows, ticks, color tone, and the position of its zero line. */
+const panels = [
+  {
+    key: "precision",
+    rows: rows.map((row) => ({
+      high: precisionTrack(row.precisionCi.high),
+      label: labelOf(row),
+      low: precisionTrack(row.precisionCi.low),
+      point: precisionTrack(row.precisionGap),
+      range: precisionRange(row.precisionCi),
+      value: formatSignedTwo(row.precisionGap),
+    })),
+    ticks: PRECISION_TICKS.map((value) => ({
+      at: precisionTrack(value),
+      text: tickText(value, formatSignedTwo),
+    })),
+    title: "Top-50 precision gap",
+    tone: "model",
+    zero: precisionTrack(0),
+  },
+  {
+    key: "capture",
+    rows: rows.map((row) => ({
+      high: captureTrack(row.captureCi.high),
+      label: labelOf(row),
+      low: captureTrack(row.captureCi.low),
+      point: captureTrack(row.captureGapPts),
+      range: captureRange(row.captureCi),
+      value: captureText(row.captureGapPts),
+    })),
+    ticks: CAPTURE_TICKS.map((value) => ({
+      at: captureTrack(value),
+      text: tickText(value, formatSignedOne),
+    })),
+    title: "Missed clicks captured, points",
+    tone: "rule",
+    zero: captureTrack(0),
+  },
+] as const;
+
+/** The table of numbers that `Figure` offers as a text alternative to the chart. */
+const numbers = {
+  columns: [
+    "Test set",
+    "Precision gap",
+    "Precision 95% interval",
+    "Capture gap (points)",
+    "Capture 95% interval",
+    "Resamples with model ahead",
+  ],
+  emphasizeLast: true,
+  rows: rows.map((row) => [
+    labelOf(row),
+    formatSignedTwo(row.precisionGap),
+    precisionRange(row.precisionCi),
+    captureText(row.captureGapPts),
+    captureRange(row.captureCi),
+    `${row.modelAheadPct}%`,
+  ]),
+};
+---
+
+<Figure
+  id="model-vs-rule"
+  label="Fig. 3"
+  source="validation-audit"
+  title={title}
+  subtitle={subtitle}
+  caption={caption}
+  legend={[
+    { label: "Model ahead", shape: "dot", tone: "data-a" },
+    { label: "Rule B ahead", shape: "dot", tone: "data-b" },
+  ]}
+  numbers={numbers}
+>
+  <div class="model-vs-rule" data-chart>
+    {/* One panel per measure, each with a row for every test set. */}
+    {panels.map((panel) => (
+      <section class="model-vs-rule__panel" aria-label={panel.title}>
+        <h4 class="model-vs-rule__panel-title">{panel.title}</h4>
+        <ul class="model-vs-rule__rows" data-tooltips aria-label={panel.title}>
+          {panel.rows.map((row) => (
+            <li
+              class="model-vs-rule__row"
+              data-label={`${row.label}: ${panel.title}`}
+              data-value={row.value}
+            >
+              <span class="model-vs-rule__text">
+                <span>{row.label}</span>
+                <strong class="model-vs-rule__value">{row.value}</strong>
+                <span>[{row.range}]</span>
+              </span>
+              {/* The track draws the zero line, then the 95% interval bar, then the point estimate. */}
+              <span class="model-vs-rule__track" aria-hidden="true">
+                <span class="model-vs-rule__zero" style={`left: ${trackStyle(panel.zero)}`} />
+                <span
+                  class={`model-vs-rule__interval model-vs-rule__interval--${panel.tone}`}
+                  data-draw
+                  style={`left: ${trackStyle(row.low)}; width: ${trackStyle(row.high - row.low)}`}
+                />
+                <span
+                  class={`model-vs-rule__point model-vs-rule__point--${panel.tone}`}
+                  data-fade
+                  style={`left: ${trackStyle(row.point)}`}
+                />
+              </span>
+            </li>
+          ))}
+        </ul>
+        {/* Tick labels along the bottom edge of the panel. */}
+        <div class="model-vs-rule__axis" aria-hidden="true">
+          {panel.ticks.map((tick) => (
+            <span class="model-vs-rule__tick" style={`left: ${trackStyle(tick.at)}`}>
+              {tick.text}
+            </span>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</Figure>
+
+<style>
+  .model-vs-rule {
+    display: grid;
+
+    /* Panels sit side by side when there is room and stack when there is not. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-6) var(--space-7);
+    font-family: var(--font-mono);
+  }
+
+  .model-vs-rule__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .model-vs-rule__panel-title {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--ink);
+  }
+
+  .model-vs-rule__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .model-vs-rule__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .model-vs-rule__text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-3);
+    font-size: 0.75rem;
+    color: var(--ink-2);
+  }
+
+  .model-vs-rule__value {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .model-vs-rule__track {
+    position: relative;
+    display: block;
+    height: 1.25rem;
+  }
+
+  /* The vertical line at a gap of zero, where the model and Rule B tie. */
+  .model-vs-rule__zero {
+    position: absolute;
+    inset-block: 0;
+    width: 1px;
+    background-color: var(--ink-2);
+  }
+
+  .model-vs-rule__interval {
+    position: absolute;
+
+    /* Half the 3px height is subtracted so the bar is centered on the track. */
+    inset-block-start: calc(50% - 1.5px);
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .model-vs-rule__point {
+    position: absolute;
+    inset-block-start: 50%;
+    width: 0.625rem;
+    height: 0.75rem;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+
+    /* Centers the dot on its value, both across and down. */
+    translate: -50% -50%;
+  }
+
+  .model-vs-rule__interval--model,
+  .model-vs-rule__point--model {
+    background-color: var(--data-a);
+  }
+
+  .model-vs-rule__interval--rule,
+  .model-vs-rule__point--rule {
+    background-color: var(--data-b);
+  }
+
+  .model-vs-rule__axis {
+    position: relative;
+    height: 1.5rem;
+    font-size: 0.6875rem;
+    color: var(--ink-2);
+    border-block-start: 1px solid var(--line);
+  }
+
+  .model-vs-rule__tick {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    white-space: nowrap;
+
+    /* Centers each tick label under its value. */
+    translate: -50% 0;
+  }
+</style>

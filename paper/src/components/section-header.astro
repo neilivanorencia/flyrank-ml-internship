@@ -1,0 +1,93 @@
+---
+/**
+ * The heading block that opens a paper section, with a number chip, a title, and an optional lead sentence.
+ */
+
+/** The text and options for one section heading. */
+interface Props {
+  /** The id of the `h2`, which the contents menu and in-page links point at. */
+  id: string;
+  /** A one-sentence statement shown under the title. */
+  lead?: string;
+  /** The section number shown in the chip, such as `03`. */
+  number: string;
+  /** Restyles the heading for the dark bands. */
+  onDark?: boolean;
+  title: string;
+}
+
+const { id, lead, number, onDark = false, title } = Astro.props;
+---
+
+<div class:list={["section-header", { "section-header--on-dark": onDark }]}>
+  <div class="section-header__row">
+    {/* The number is decorative, so it is hidden from assistive tech and the title names the section. */}
+    <span class="section-header__chip" aria-hidden="true">
+      {number}
+    </span>
+    <h2 class="section-header__title" id={id}>
+      {title}
+    </h2>
+  </div>
+  {lead !== undefined && <p class="section-header__lead">{lead}</p>}
+</div>
+
+<style>
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--stack-gap);
+  }
+
+  .section-header__row {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+  }
+
+  .section-header__chip {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+    border: 1px solid var(--accent-ink);
+    border-radius: var(--radius-small);
+  }
+
+  .section-header__title {
+    font-size: var(--text-h2);
+  }
+
+  .section-header__lead {
+    font-size: var(--text-statement);
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  /* On dark bands the number chip becomes a plain large numeral and the title grows to band size. */
+  .section-header--on-dark {
+    .section-header__chip {
+      width: auto;
+      height: auto;
+      font-size: var(--text-number);
+      font-weight: 300;
+      color: var(--accent);
+      background: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .section-header__title {
+      font-size: var(--text-band);
+      color: var(--on-night);
+    }
+  }
+</style>

@@ -1,0 +1,120 @@
+---
+import ArrowUpRightIcon from "@phosphor-icons/core/assets/regular/arrow-up-right.svg";
+import DownloadIcon from "@phosphor-icons/core/assets/regular/download-simple.svg";
+import FilePdfIcon from "@phosphor-icons/core/assets/regular/file-pdf.svg";
+import GithubIcon from "@phosphor-icons/core/assets/regular/github-logo.svg";
+import NotebookIcon from "@phosphor-icons/core/assets/regular/notebook.svg";
+import PlayCircleIcon from "@phosphor-icons/core/assets/regular/play-circle.svg";
+
+/**
+ * A dark card that links to a resource such as the report PDF, a notebook, or the repository.
+ * The corner arrow tells the reader whether the link opens something or downloads a file.
+ */
+
+/** The destination and wording for one resource link. */
+interface Props {
+  /** Makes the link download the file and swaps the arrow for a download icon. */
+  download?: boolean;
+  href: string;
+  /** Picks the icon that names the kind of resource. */
+  icon: "colab" | "notebook" | "pdf" | "repository";
+  subtitle: string;
+  title: string;
+}
+
+const { download = false, href, icon, subtitle, title } = Astro.props;
+
+/** The icon component for each kind of resource. */
+const icons = {
+  colab: PlayCircleIcon,
+  notebook: NotebookIcon,
+  pdf: FilePdfIcon,
+  repository: GithubIcon,
+} as const;
+/** The icon for this card's resource kind. */
+const Icon = icons[icon];
+/** The corner arrow for each value of `download`, keyed by the text `false` and `true`. */
+const arrows = { false: ArrowUpRightIcon, true: DownloadIcon } as const;
+/** The corner arrow for this card. */
+const Arrow = arrows[`${download}`];
+---
+
+<a class="link-card" href={href} download={download}>
+  <span class="link-card__row">
+    <Icon class="link-card__icon" aria-hidden="true" />
+    <Arrow class="link-card__arrow" aria-hidden="true" />
+  </span>
+  <span class="link-card__text">
+    <span class="link-card__title">{title}</span>
+    <span class="link-card__sub">{subtitle}</span>
+  </span>
+</a>
+
+<style>
+  .link-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-height: 2.75rem;
+    padding: var(--space-5);
+    color: var(--on-night);
+    text-decoration: none;
+    background-color: var(--night-raised);
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-card);
+    transition:
+      border-color 220ms ease-out,
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+
+    &:hover {
+      border-color: var(--accent);
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
+  }
+
+  .link-card__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .link-card__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--accent);
+  }
+
+  .link-card__arrow {
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--on-night-2);
+  }
+
+  .link-card__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1875rem;
+  }
+
+  .link-card__title {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .link-card__sub {
+    font-size: var(--text-small);
+    color: var(--on-night-2);
+  }
+
+  /* The shadow offsets one way and the card moves the other, so the card seems to lift off its shadow. */
+  @media (hover: hover) {
+    .link-card:hover {
+      box-shadow: -0.625rem 0.625rem 0 var(--accent);
+      transform: translate(0.3125rem, -0.3125rem);
+    }
+  }
+</style>

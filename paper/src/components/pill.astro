@@ -1,0 +1,64 @@
+---
+/**
+ * A small rounded label for a short status or category, with the label text supplied through the default slot.
+ */
+
+/** The options that choose how the pill is drawn. */
+interface Props {
+  /** Picks the colors, where the `night` tones are for dark backgrounds and the others for light ones. */
+  tone?: "coral" | "mint" | "night-coral" | "night-mint" | "outline";
+}
+
+const { tone = "mint" } = Astro.props;
+---
+
+<span class:list={["pill", `pill--${tone}`]}>
+  <span class="pill__label">
+    <slot />
+  </span>
+</span>
+
+<style>
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+
+    /* Keeps a short label on one line so the pill stays a single rounded shape. */
+    white-space: nowrap;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+  }
+
+  .pill__label {
+    font-size: var(--text-small);
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .pill--mint {
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+  }
+
+  .pill--coral {
+    color: var(--data-b);
+    background-color: var(--coral-wash);
+    border-color: var(--coral-line);
+  }
+
+  .pill--outline {
+    color: var(--ink-2);
+    border-color: var(--line);
+  }
+
+  .pill--night-mint {
+    color: var(--mint-soft);
+    background-color: var(--night-mint-wash);
+  }
+
+  .pill--night-coral {
+    color: var(--coral-soft);
+    background-color: var(--coral-wash);
+  }
+</style>

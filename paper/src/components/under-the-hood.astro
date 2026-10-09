@@ -1,0 +1,33 @@
+{/* An aside labelled `Under the hood` that holds implementation detail for readers who want it, passed in through the default slot. */}
+<div class="under-the-hood">
+  <p class="under-the-hood__chip">Under the hood</p>
+  <div class="under-the-hood__text">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .under-the-hood {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    /* The left rule sets the aside apart from the main text without a full box. */
+    padding-inline-start: var(--space-4);
+    border-inline-start: 2px solid var(--line);
+  }
+
+  .under-the-hood__chip {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .under-the-hood__text {
+    font-size: var(--text-label);
+    line-height: 1.65;
+    color: var(--ink-body);
+  }
+</style>

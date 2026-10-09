@@ -1,0 +1,90 @@
+---
+/**
+ * A bordered surface that groups related content, with a tone, a size, and an optional hover lift.
+ */
+
+/** The options that choose how the card is drawn. */
+interface Props {
+  /** The element to render, so a card inside a list can be an `li` and a standalone one an `article`. */
+  as?: "article" | "div" | "li";
+  /** Lifts the card on a hard offset shadow when hovered, on devices that can hover. */
+  lift?: boolean;
+  /** Sets the padding, and the large size also rounds the corners more. */
+  size?: "compact" | "large" | "regular";
+  /** Picks the background and text colors, from the light default to the dark night tones. */
+  tone?: "dark" | "default" | "raised" | "tint" | "wash";
+}
+
+const { as: Tag = "div", lift = false, size = "regular", tone = "default" } = Astro.props;
+
+export type { Props };
+---
+
+<Tag class:list={["card", `card--${tone}`, `card--${size}`, { "card--lift": lift }]}>
+  <slot />
+</Tag>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    /* Lets the card shrink inside flex and grid parents instead of overflowing. */
+    min-width: 0;
+    color: var(--ink-body);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+
+  .card--compact {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .card--regular {
+    padding: var(--space-5);
+  }
+
+  .card--large {
+    gap: var(--space-5);
+    padding: var(--space-6);
+    border-radius: var(--radius-card-large);
+  }
+
+  .card--dark {
+    color: var(--on-night-2);
+    background-color: var(--night);
+    border-color: var(--night-line);
+  }
+
+  .card--raised {
+    color: var(--on-night-2);
+    background-color: var(--night-raised);
+    border-color: var(--night-line);
+  }
+
+  .card--tint {
+    background-color: var(--bg-alt);
+    border-color: transparent;
+  }
+
+  .card--wash {
+    background-color: var(--accent-wash);
+    border-color: transparent;
+  }
+
+  /* The shadow offsets one way and the card moves the other, so the card seems to lift off its shadow. */
+  @media (hover: hover) {
+    .card--lift {
+      transition:
+        transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+
+      &:hover {
+        box-shadow: -0.75rem 0.75rem 0 var(--accent);
+        transform: translate(0.375rem, -0.375rem);
+      }
+    }
+  }
+</style>

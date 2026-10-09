@@ -1,0 +1,257 @@
+---
+import CalendarIcon from "@phosphor-icons/core/assets/regular/calendar-blank.svg";
+import LockIcon from "@phosphor-icons/core/assets/regular/lock-simple.svg";
+import MinusCircleIcon from "@phosphor-icons/core/assets/regular/minus-circle.svg";
+
+import Card from "@/components/card.astro";
+import Pill from "@/components/pill.astro";
+import SectionHeader from "@/components/section-header.astro";
+
+const pairs = [
+  {
+    baseRate: "7.4%",
+    label: "Feb to Mar 2026",
+    pages: "114,972 pages",
+    role: "Development",
+    sealed: false,
+    shortfalls: "8,465 real shortfalls",
+  },
+  {
+    baseRate: "6.4%",
+    label: "Mar to Apr 2026",
+    pages: "155,707 pages",
+    role: "Development",
+    sealed: false,
+    shortfalls: "10,031 real shortfalls",
+  },
+  {
+    baseRate: "4.1%",
+    label: "Apr to May 2026",
+    pages: "157,530 pages",
+    role: "Development",
+    sealed: false,
+    shortfalls: "6,525 real shortfalls",
+  },
+  {
+    baseRate: "2.2%",
+    label: "May to Jun 2026",
+    pages: "137,275 pages",
+    role: "Sealed, scored once",
+    sealed: true,
+    shortfalls: "2,978 real shortfalls",
+  },
+] as const;
+
+const exclusions = [
+  {
+    text: "Some days showed a position of 0, or a position between 0 and 1, mostly on busy days. These made pages look top-ranked and inflated their expected clicks, so valid positions start at 1.",
+    title: "Impossible positions",
+  },
+  {
+    text: "Clients whose search history starts after the first day of a month are left out of that month, so every site is measured over a whole month and compared fairly.",
+    title: "Late-starting clients",
+  },
+  {
+    text: "A page needs impressions and a valid position in both months of a pair; otherwise there is nothing to compare next month against.",
+    title: "Pages missing a month",
+  },
+  {
+    text: "If FlyRank's own team optimized a page during the pair, someone already acted on it, so next month cannot tell us whether the shortfall would have lasted on its own.",
+    title: "Pages FlyRank optimized",
+  },
+  {
+    text: "Word counts, edit dates, and product flags come from later snapshots or record FlyRank's own later decisions. Using them would leak the future, so only keyword research fields, fixed before a page is written, are used as features.",
+    title: "Fields from after month M",
+  },
+] as const;
+---
+
+<section
+  class="section section--alt backdrop backdrop--dots"
+  id="data"
+  aria-labelledby="data-title"
+>
+  <div class="column stack" data-reveal>
+    <SectionHeader
+      id="data-title"
+      number="2"
+      title="Data"
+      lead="Five months of one portfolio, cut so the last month stayed sealed until a single final test."
+    />
+    <p>
+      FlyRank's internship warehouse, read with DuckDB straight from Hugging Face: 78,835,655 daily
+      page rows, 519,606 pages, 104 clients. Every identifier is a pseudonymous hash. One row of the
+      study is one page in one month pair: features from month M, outcome from month M+1.
+    </p>
+    <ul class="data__pairs">
+      {pairs.map((pair) => (
+        <Card as="li" lift tone={pair.sealed ? "dark" : "default"}>
+          <div class:list={["data__pair", { "data__pair--sealed": pair.sealed }]}>
+            <p class="data__pair-top">
+              <span class="data__pair-label">{pair.label}</span>
+              {pair.sealed ? (
+                <LockIcon class="data__pair-icon data__pair-icon--sealed" aria-hidden="true" />
+              ) : (
+                <CalendarIcon class="data__pair-icon" aria-hidden="true" />
+              )}
+            </p>
+            <p class="data__base">
+              <span class="data__base-rate">{pair.baseRate}</span>
+              <span class="data__base-label">base rate</span>
+            </p>
+            <p class="data__stats">
+              <span>{pair.pages}</span>
+              <span>{pair.shortfalls}</span>
+            </p>
+            <Pill tone={pair.sealed ? "night-mint" : "mint"}>{pair.role}</Pill>
+          </div>
+        </Card>
+      ))}
+    </ul>
+    <div class="data__exclusions">
+      <h3 class="data__exclusions-title">What was left out, and why</h3>
+      <ul class="data__exclusion-list">
+        {exclusions.map((item) => (
+          <li class="data__exclusion">
+            <MinusCircleIcon class="data__exclusion-icon" aria-hidden="true" />
+            <div class="data__exclusion-text">
+              <p class="data__exclusion-key">{item.title}</p>
+              <p class="data__exclusion-value">{item.text}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .data__pairs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: var(--space-4);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .data__pair {
+    --pair-ink: var(--ink);
+    --pair-ink-2: var(--ink-2);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+    height: 100%;
+  }
+
+  .data__pair--sealed {
+    --pair-ink: var(--on-night);
+    --pair-ink-2: var(--on-night-2);
+  }
+
+  .data__pair-top {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    align-self: stretch;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    color: var(--pair-ink-2);
+  }
+
+  .data__pair-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--ink-2);
+  }
+
+  .data__pair-icon--sealed {
+    color: var(--accent);
+  }
+
+  .data__base {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .data__base-rate {
+    font-size: 2.25rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--pair-ink);
+    letter-spacing: -0.04em;
+  }
+
+  .data__base-label {
+    font-size: var(--text-small);
+    color: var(--pair-ink-2);
+  }
+
+  .data__stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--pair-ink-2);
+  }
+
+  .data__exclusions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .data__exclusions-title {
+    font-size: 1rem;
+  }
+
+  .data__exclusion-list {
+    display: grid;
+    gap: var(--space-5) var(--space-6);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .data__exclusion {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .data__exclusion-icon {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-block-start: 0.125rem;
+    color: var(--ink-2);
+  }
+
+  .data__exclusion-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .data__exclusion-key {
+    font-size: var(--text-label);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .data__exclusion-value {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  @media (width >= 48rem) {
+    .data__exclusion-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

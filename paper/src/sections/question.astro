@@ -1,0 +1,45 @@
+---
+import CtrCurve from "@/charts/ctr-curve.astro";
+import RankRadar from "@/illustrations/rank-radar.astro";
+import SectionHeader from "@/components/section-header.astro";
+---
+
+<section class="section" id="question" aria-labelledby="question-title">
+  <div class="column stack" data-reveal>
+    <SectionHeader id="question-title" number="1" title="Question" />
+    <blockquote class="question__quote">
+      Which existing pages are earning far fewer clicks than their position and their own site
+      predict, beyond what bad luck explains, and will that shortfall still be there next month?
+    </blockquote>
+    <RankRadar />
+    <p>
+      Every month a content editor has thousands of live pages and time to review a few dozen. A
+      page that ranks well but is not clicked is a cheap opportunity: the visibility is already
+      earned. But a page can also miss clicks by chance for a month and recover on its own.
+    </p>
+    <p>
+      A common rule flags any page in the top 20 with a click rate below 0.5%. On this portfolio the
+      normal click rate sits between 0.24% and 0.42% at every position, so the rule flags most
+      pages, including the ones clicking exactly as expected.
+    </p>
+    <CtrCurve
+      title="The flat 0.5% rule flags 74% to 88% of pages at every position"
+      subtitle="Share of pages with 500+ impressions that the rule flags, by average position"
+      caption="Fig. 1. Even at position 2, where pages click best (0.42%), three in four pages fail the flag. The rule cannot tell a healthy page from a broken one."
+    />
+  </div>
+</section>
+
+<style>
+  .question__quote {
+    padding-block: var(--space-1);
+    padding-inline-start: var(--space-5);
+    margin: 0;
+    font-size: var(--text-statement);
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    border-inline-start: 3px solid var(--accent-ink);
+  }
+</style>

@@ -1,0 +1,280 @@
+---
+/**
+ * A list of labelled facts, drawn either as big headline statistics or as a keyed table of short rows.
+ * Each fact is a term and a value, and the value can carry tool chips, inline code, or a `lead vs trail` comparison.
+ */
+
+import flag from "@/lib/attribute";
+
+/** A tool name with its version, drawn as a small pill. */
+interface Chip {
+  readonly name: string;
+  readonly version: string;
+}
+
+/** One fact in the strip. */
+interface FactItem {
+  /** Tool chips shown before the value. */
+  readonly chips?: readonly Chip[] | undefined;
+  /** Inline code shown before the value. */
+  readonly code?: string | undefined;
+  /** The term, which is the caption in `stat` and the key in `keyed`. */
+  readonly label: string;
+  /** The fact itself, where a value of the form `a vs b` is drawn as a comparison. */
+  readonly value: string;
+}
+
+/** The facts and the look to draw them in. */
+interface Props {
+  items: readonly FactItem[];
+  /** Chooses big statistics with `stat` or a bordered key and value list with `keyed`. */
+  variant: "keyed" | "stat";
+}
+
+const { items, variant } = Astro.props;
+
+/** Matches a hyphenated acronym such as `ROC-AUC` and captures it as `acronym`. */
+const ACRONYM = /(?<acronym>\b[A-Z]{2,}-[A-Z]{2,}\b)/u;
+/** The size of a pair in a split result, because splitting on a capture group alternates text and match. */
+const PAIR = 2;
+
+/**
+ * Splits a label so that hyphenated acronyms can be kept from breaking across lines.
+ * @param text - The label to split.
+ * @returns The parts in order, where `keep` marks the acronym parts.
+ */
+const keepTogether = (text: string): { keep: boolean; text: string }[] =>
+  // A split on a capture group puts the matches at the odd indexes.
+  text.split(ACRONYM).map((part, index) => ({ keep: index % PAIR === 1, text: part }));
+
+/**
+ * Tells whether a value is a single number that the page can count up to.
+ * @param value - The fact's value text.
+ * @returns `true` for the `stat` variant when the value holds exactly one number.
+ */
+const counts = (value: string): boolean =>
+  variant === "stat" && [...value.matchAll(/\d[\d,.]*/gu)].length === 1;
+
+/** The separator that turns a value into a comparison. */
+const VERSUS = " vs ";
+
+/**
+ * Splits a comparison value into its two sides.
+ * @param value - The fact's value text.
+ * @returns The `lead` and `trail` text, or `undefined` when the value has no ` vs `.
+ */
+const versus = (value: string): { lead: string; trail: string } | undefined => {
+  const [lead, trail] = value.split(VERSUS);
+  // A value without the separator is not a comparison.
+  if (lead === undefined || trail === undefined) {
+    return undefined;
+  }
+  return { lead, trail };
+};
+---
+
+<dl class:list={["fact-strip", `fact-strip--${variant}`]}>
+  {items.map((item) => (
+    <div class="fact-strip__item">
+      <dt class="fact-strip__label">
+        {keepTogether(item.label).map((part) => (
+          <>
+            {part.keep && <span class="fact-strip__keep">{part.text}</span>}
+            {!part.keep && part.text}
+          </>
+        ))}
+      </dt>
+      <dd class="fact-strip__value" data-count={flag(counts(item.value))}>
+        {item.chips !== undefined && (
+          <ul class="fact-strip__chips">
+            {item.chips.map((chip) => (
+              <li class="fact-strip__chip">
+                {chip.name} <span class="fact-strip__version">{chip.version}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {item.code !== undefined && <code class="fact-strip__code">{item.code}</code>}
+        {item.code !== undefined && " "}
+        {versus(item.value) === undefined && item.value}
+        {versus(item.value) !== undefined && (
+          <>
+            <span class="fact-strip__lead">{versus(item.value)?.lead}</span>
+            <span class="fact-strip__vs">vs</span>
+            <span class="fact-strip__trail">{versus(item.value)?.trail}</span>
+          </>
+        )}
+      </dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .fact-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    margin: 0;
+  }
+
+  .fact-strip__item {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .fact-strip__label,
+  .fact-strip__value {
+    margin: 0;
+  }
+
+  .fact-strip--stat {
+    gap: var(--space-6);
+
+    .fact-strip__item {
+      position: relative;
+
+      /* Reverses the visual order so the big number shows first while the label stays first in the markup. */
+      flex-direction: column-reverse;
+      gap: var(--space-3);
+      justify-content: flex-end;
+      padding-block-start: var(--space-6);
+
+      /* Makes the item a size container, which the `cqi` font size on the value measures against. */
+      container-type: inline-size;
+      border-block-start: 1px solid var(--band-line);
+
+      &::after {
+        position: absolute;
+        inset-block-start: -2px;
+        inset-inline-start: 0;
+        width: 2rem;
+        height: 3px;
+        content: "";
+        background-color: var(--band-ink);
+        border-radius: 2px;
+      }
+    }
+
+    .fact-strip__value {
+      /* Caps the number at a share of the item's own width, so long figures shrink instead of overflowing. */
+      font-size: min(var(--text-number), 12.5cqi);
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--band-ink);
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .fact-strip__vs {
+      margin-inline: 0.25em;
+      font-family: var(--font-mono);
+      font-size: 0.45em;
+      font-weight: 500;
+      vertical-align: 0.35em;
+      color: var(--band-ink-2);
+      letter-spacing: 0;
+    }
+
+    .fact-strip__trail {
+      color: color-mix(in srgb, var(--band-ink) 62%, transparent);
+    }
+
+    @media (width >= 40rem) and (width < 64rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fact-strip__label {
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: var(--band-ink-2);
+      text-wrap: pretty;
+    }
+  }
+
+  .fact-strip__keep {
+    white-space: nowrap;
+  }
+
+  .fact-strip--keyed {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+    background-color: var(--night-raised);
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-card);
+
+    .fact-strip__item {
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-5);
+      border-block-end: 1px solid var(--night-line);
+
+      &:last-child {
+        border-block-end: 0;
+      }
+
+      @media (width >= 40rem) {
+        display: grid;
+        grid-template-columns: 6.5rem minmax(0, 1fr);
+        gap: var(--space-4);
+        align-items: baseline;
+      }
+    }
+
+    /* On wide screens the keyed rows turn into three columns, with a divider line between them. */
+    @media (width >= 64rem) {
+      grid-template-columns: minmax(0, 0.6fr) minmax(0, 1.4fr) minmax(0, 1.6fr);
+
+      .fact-strip__item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-5) var(--space-6);
+        border-block-end: 0;
+        border-inline-start: 1px solid var(--night-line);
+
+        &:first-child {
+          border-inline-start: 0;
+        }
+      }
+    }
+
+    .fact-strip__label {
+      font-family: var(--font-mono);
+      font-size: var(--text-mono);
+      color: var(--on-night-2);
+    }
+
+    .fact-strip__value {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--on-night);
+    }
+  }
+
+  .fact-strip__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .fact-strip__chip,
+  .fact-strip__code {
+    padding: 0.1875rem 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--on-night);
+    background-color: var(--night-mint-wash);
+    border: 1px solid var(--night-mint-line);
+    border-radius: var(--radius-pill);
+  }
+
+  .fact-strip__code {
+    color: var(--accent);
+  }
+
+  .fact-strip__version {
+    color: var(--accent);
+  }
+</style>

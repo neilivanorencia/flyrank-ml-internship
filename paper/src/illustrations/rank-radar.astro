@@ -1,0 +1,389 @@
+---
+/**
+ * An animated radar where each ring is a Google position and each dot is a page, with one dim dot that ranks high yet gets almost no clicks.
+ * A sweep passes over the dots once per loop to stand for the monthly check, and it catches the dim dot again in the next month.
+ */
+
+import geometry from "@/illustrations/geometry.json";
+
+/** The ring positions, the sweep's resting angle, the dim dot, and the page dots, all read from the design frames. */
+const { center, orbits, brightOrbit, stillAngle, dim, pages } = geometry.radar;
+/** The center of the radar, with 0 as a fallback so the circles still get numbers. */
+const [cx = 0, cy = 0] = center;
+/** The position of the dim dot, with 0 as a fallback so the circles still get numbers. */
+const [dimX = 0, dimY = 0] = dim;
+/** The seconds one sweep takes, which must match the sweep animation length in the CSS. */
+const SWEEP_S = 5;
+/** The degrees in a full turn, used to turn a dot's angle into a share of the sweep. */
+const FULL_TURN_DEG = 360;
+/** The ratio of a dot's halo radius to its own radius, which only feeds the `halo` field that the markup does not read. */
+const HALO_RATIO = 3.2;
+/** The share of a dot's own opacity that its pulse starts with. */
+const HALO_OPACITY = 0.45;
+/** The decimal places kept in the animation delays. */
+const DECIMALS = 2;
+/** The page dots with the delay at which the sweep reaches each one, and the sizes and opacities the markup needs. */
+const dots = pages.map((page) => ({
+  delay: `${((page.angle / FULL_TURN_DEG) * SWEEP_S).toFixed(DECIMALS)}s`,
+  dotX: page.x,
+  dotY: page.y,
+  halo: page.r * HALO_RATIO,
+  haloOpacity: page.opacity * HALO_OPACITY,
+  opacity: page.opacity,
+  radius: page.r,
+}));
+---
+
+{/* The `data-loop` flag lets `loops.ts` pause the animation while the radar is off screen. */}
+<figure class="rank-radar" data-loop aria-labelledby="rank-radar-title">
+  <div class="rank-radar__stage">
+    {/* The sweep is a cone behind the drawing, and `--still` is the angle it rests at when motion is reduced. */}
+    <span class="rank-radar__sweep" style={`--still: ${stillAngle}deg`} aria-hidden="true"></span>
+    {/* The drawing is decorative, and the caption beside it carries the meaning for assistive tech. */}
+    <svg class="rank-radar__art" viewBox="115 20 350 350" aria-hidden="true" focusable="false">
+      {/* One ring per Google position, where the index fades the outer rings and the bright ring stands out. */}
+      {orbits.map((radius, index) => (
+        <circle
+          class:list={[
+            "rank-radar__orbit",
+            { "rank-radar__orbit--bright": radius === brightOrbit },
+          ]}
+          cx={cx}
+          cy={cy}
+          r={radius}
+          style={`--orbit: ${index}`}
+        />
+      ))}
+      {/* The center point, which stands for position 1. */}
+      <circle class="rank-radar__core-halo" cx={cx} cy={cy} r="10"></circle>
+      <circle class="rank-radar__core" cx={cx} cy={cy} r="4"></circle>
+      {/* Each page is a dot with a pulse, where the delay lines the glow up with the moment the sweep passes. */}
+      {dots.map((dot) => (
+        <g class="rank-radar__page" style={`--delay: ${dot.delay}`}>
+          <circle
+            class="rank-radar__pulse"
+            cx={dot.dotX}
+            cy={dot.dotY}
+            r={dot.radius}
+            fill-opacity={dot.haloOpacity}
+          />
+          <circle cx={dot.dotX} cy={dot.dotY} r={dot.radius} fill-opacity={dot.opacity} />
+        </g>
+      ))}
+      {/* The rings that appear around the dim dot when the check catches it. */}
+      <g class="rank-radar__caught">
+        <circle
+          class="rank-radar__ring rank-radar__ring--outer"
+          cx={dimX}
+          cy={dimY}
+          r="16"
+        ></circle>
+        <circle class="rank-radar__ring" cx={dimX} cy={dimY} r="10"></circle>
+      </g>
+      {/* The dim dot sits on top so the rings and pulses never cover it. */}
+      <circle class="rank-radar__dim" cx={dimX} cy={dimY} r="4"></circle>
+    </svg>
+  </div>
+  {/* The caption explains the radar in words, and the chips below take turns lighting up with the loop. */}
+  <figcaption class="rank-radar__caption">
+    <p class="rank-radar__title" id="rank-radar-title">
+      A top rank, almost no clicks
+    </p>
+    <p class="rank-radar__body">
+      Each ring is a Google position, with position 1 at the center. Each dot is a page, and the
+      brighter it glows, the more clicks it gets. The sweep is the monthly check. The dim dot on
+      ring 2 ranks near the top yet gets almost no clicks, and the check finds it again the next
+      month.
+    </p>
+    <ul class="rank-radar__chips">
+      <li class="rank-radar__chip rank-radar__chip--first">
+        <span class="rank-radar__mark" aria-hidden="true"></span>this month: caught
+      </li>
+      <li class="rank-radar__chip rank-radar__chip--second">
+        <span class="rank-radar__mark" aria-hidden="true"></span>next month: caught again
+      </li>
+    </ul>
+  </figcaption>
+</figure>
+
+<script>
+  import "@/scripts/loops.ts";
+</script>
+
+<style>
+  .rank-radar {
+    display: grid;
+    gap: var(--space-5);
+    align-items: center;
+    padding: var(--space-5);
+    margin: 0;
+    background: radial-gradient(ellipse 70% 110% at 36% 50%, #54e39922, transparent), var(--night);
+    border-radius: var(--radius-card-large);
+  }
+
+  .rank-radar__stage {
+    position: relative;
+    width: 100%;
+    max-width: 22rem;
+    aspect-ratio: 1;
+    margin-inline: auto;
+
+    /* Cuts off the rotating sweep at the stage edge without creating a scroll container. */
+    overflow: clip;
+  }
+
+  .rank-radar__art {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .rank-radar__orbit {
+    fill: none;
+    stroke: var(--mint-soft);
+
+    /* Each ring out from the center is a little fainter than the one inside it. */
+    stroke-opacity: calc(0.16 - var(--orbit) * 0.01);
+  }
+
+  .rank-radar__orbit--bright {
+    stroke-opacity: 0.22;
+  }
+
+  .rank-radar__sweep {
+    position: absolute;
+
+    /* Insets the cone so its edge lines up with the outer ring of the drawing. */
+    inset: 2.857%;
+
+    /* A cone that is transparent for most of the turn and brightens toward a leading edge at the top, like a radar trail. */
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 190deg,
+      #54e39900 190deg,
+      #54e3990a 225deg,
+      #54e39918 262deg,
+      #54e39930 300deg,
+      #54e39962 335deg,
+      #54e399a8 354deg,
+      #54e399e6 359deg,
+      #54e399 360deg
+    );
+    border-radius: 50%;
+    mask-image: radial-gradient(circle closest-side, #000 60%, transparent 100%);
+    transform: rotate(var(--still));
+  }
+
+  .rank-radar__core-halo {
+    fill: var(--accent);
+    fill-opacity: 0.2;
+  }
+
+  .rank-radar__core,
+  .rank-radar__page {
+    fill: var(--accent);
+  }
+
+  /* The resting size of the pulse when it is not animated, so it shows as a soft halo around its dot. */
+  .rank-radar__pulse {
+    transform: scale(2.6);
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+
+  .rank-radar__ring {
+    fill: none;
+    stroke: var(--coral);
+    stroke-width: 1.4;
+  }
+
+  .rank-radar__ring--outer {
+    stroke-opacity: 0.35;
+    stroke-width: 1.3;
+  }
+
+  .rank-radar__caught {
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+
+  .rank-radar__dim {
+    fill: var(--on-night-2);
+    fill-opacity: 0.6;
+  }
+
+  .rank-radar__caption {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .rank-radar__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--on-night);
+  }
+
+  .rank-radar__body {
+    font-size: var(--text-small);
+    line-height: 1.5;
+    color: var(--on-night-2);
+  }
+
+  .rank-radar__chips {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: flex-start;
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    list-style: none;
+  }
+
+  .rank-radar__chip {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-height: 2.125rem;
+    padding: 0 var(--space-4);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--coral-soft);
+    background-color: var(--coral-wash);
+    border: 1px solid var(--coral-line);
+    border-radius: var(--radius-pill);
+  }
+
+  .rank-radar__mark {
+    width: 0.625rem;
+    height: 0.625rem;
+    background-color: var(--coral);
+    border-radius: 50%;
+  }
+
+  @media (width >= 48rem) {
+    .rank-radar {
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      padding: var(--space-6);
+    }
+  }
+
+  /* The loop runs only for people who have not asked for reduced motion, and everyone else sees the resting radar. */
+  @media (prefers-reduced-motion: no-preference) {
+    .rank-radar__sweep {
+      animation: radar-sweep 5s linear infinite;
+    }
+
+    .rank-radar__page {
+      animation: radar-blip 5s cubic-bezier(0.25, 0.1, 0.25, 1) both infinite;
+
+      /* Subtracting one full sweep makes the delay negative, so the loop is already in step when the page loads. */
+      animation-delay: calc(var(--delay) - 5s);
+    }
+
+    .rank-radar__pulse {
+      animation: radar-pulse 5s cubic-bezier(0.22, 0.61, 0.36, 1) both infinite;
+      animation-delay: calc(var(--delay) - 5s);
+    }
+
+    .rank-radar__caught {
+      animation: radar-catch 5s ease-out infinite;
+    }
+
+    /* The chips run on a ten-second cycle, which is two sweeps, so each one lights in its own month. */
+    .rank-radar__chip--first {
+      animation: radar-chip-first 10s step-end infinite;
+    }
+
+    .rank-radar__chip--second {
+      animation: radar-chip-second 10s step-end infinite;
+    }
+
+    /* With JavaScript the animation stays paused until the script marks the radar as playing. */
+    :global(html.js) .rank-radar:not([data-playing]) * {
+      animation-play-state: paused;
+    }
+  }
+
+  /* The sweep turns once per loop, and the blip, pulse, and catch animations below share its five-second length. */
+  @keyframes radar-sweep {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes radar-blip {
+    0% {
+      opacity: 1;
+    }
+
+    32%,
+    100% {
+      opacity: 0.55;
+    }
+  }
+
+  @keyframes radar-pulse {
+    0% {
+      opacity: 0.85;
+      transform: scale(1);
+    }
+
+    12% {
+      opacity: 0.7;
+    }
+
+    38%,
+    100% {
+      opacity: 0;
+      transform: scale(3.8);
+    }
+  }
+
+  @keyframes radar-catch {
+    0%,
+    39% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+
+    46%,
+    92% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes radar-chip-first {
+    0% {
+      opacity: 0.35;
+    }
+
+    20%,
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes radar-chip-second {
+    0% {
+      opacity: 0.35;
+    }
+
+    70%,
+    100% {
+      opacity: 1;
+    }
+  }
+</style>

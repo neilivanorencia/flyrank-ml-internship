@@ -1,0 +1,348 @@
+---
+/**
+ * An animated board that shows how many clicks a page could get by chance and where its real clicks fall.
+ * Dots drop one by one to build the chance distribution, then the page's real month lands last.
+ */
+
+import geometry from "@/illustrations/geometry.json";
+
+/** The positions of the chance dots and of the page's real month, read from the design frames. */
+const { dots, actual } = geometry.luck;
+/** The center of the page's real month, with 0 as a fallback so the circles still get numbers. */
+const [actualX = 0, actualY = 0] = actual;
+/** The pause in seconds between one dot dropping and the next. */
+const DROP_STEP_S = 0.04;
+/** The radius of a chance dot in SVG units. */
+const DOT_RADIUS = 4;
+/** The decimal places kept in the animation delays. */
+const DECIMALS = 2;
+/** The chance dots with the delay at which each one starts to drop. */
+const dropped = dots.map((dot, index) => ({
+  delay: `${(index * DROP_STEP_S).toFixed(DECIMALS)}s`,
+  dotX: dot.x,
+  dotY: dot.y,
+  kind: dot.kind,
+}));
+/** The delay of the page's real month, which is the moment after the last chance dot has dropped. */
+const actualDelay = `${(dots.length * DROP_STEP_S).toFixed(DECIMALS)}s`;
+---
+
+{/* The `data-loop` flag lets `loops.ts` pause the animation while the board is off screen. */}
+<figure class="luck-board" data-loop aria-labelledby="luck-board-title">
+  {/* The drawing is decorative, and the caption beside it carries the meaning for assistive tech. */}
+  <svg class="luck-board__art" viewBox="0 40 520 320" aria-hidden="true" focusable="false">
+    {/* The ground line the dots land on. */}
+    <line class="luck-board__baseline" x1="48" y1="306.5" x2="505" y2="306.5"></line>
+    {/* Two dashed cutoffs, one at the expected number of clicks and one at half of it. */}
+    <line
+      class="luck-board__cutoff luck-board__cutoff--expected"
+      x1="276.5"
+      y1="70"
+      x2="276.5"
+      y2="306"
+    ></line>
+    <line
+      class="luck-board__cutoff luck-board__cutoff--half"
+      x1="171.5"
+      y1="70"
+      x2="171.5"
+      y2="306"
+    ></line>
+    <text class="luck-board__label luck-board__label--expected" x="283.5" y="69">
+      expected clicks
+    </text>
+    <text class="luck-board__label luck-board__label--half" x="165" y="69" text-anchor="end">
+      half of expected
+    </text>
+    {/* One dot per chance month, where the delay staggers the drops and the kind sets the color. */}
+    {dropped.map((dot) => (
+      <circle
+        class={`luck-board__dot luck-board__dot--${dot.kind}`}
+        cx={dot.dotX}
+        cy={dot.dotY}
+        r={DOT_RADIUS}
+        style={`--delay: ${dot.delay}`}
+      />
+    ))}
+    {/* The page's real month, ringed and dropped last so it lands among the chance dots. */}
+    <g class="luck-board__actual" style={`--delay: ${actualDelay}`}>
+      <circle
+        class="luck-board__ring luck-board__ring--outer"
+        cx={actualX}
+        cy={actualY}
+        r="17"
+      ></circle>
+      <circle class="luck-board__ring" cx={actualX} cy={actualY} r="11"></circle>
+      <circle class="luck-board__actual-dot" cx={actualX} cy={actualY} r="4"></circle>
+    </g>
+    <text class="luck-board__label luck-board__label--page" x="72" y="329">
+      this page, this month
+    </text>
+    <text class="luck-board__label luck-board__label--axis" x="48" y="355">
+      fewer clicks
+    </text>
+    <text class="luck-board__label luck-board__label--axis" x="505" y="355" text-anchor="end">
+      more clicks
+    </text>
+  </svg>
+  {/* The caption explains the board in words and doubles as its legend. */}
+  <figcaption class="luck-board__caption">
+    <p class="luck-board__title" id="luck-board-title">
+      Bad luck, or a real shortfall?
+    </p>
+    <p class="luck-board__body">
+      Every mint dot is one month this page could have had by chance alone, given the clicks its
+      position and its own site predict. Most chance months land near expected clicks; only a few
+      land far below it.
+    </p>
+    <ul class="luck-board__keys">
+      <li class="luck-board__key">
+        <span class="luck-board__swatch" aria-hidden="true"></span>A month that luck alone could
+        explain
+      </li>
+      <li class="luck-board__key">
+        <span class="luck-board__swatch luck-board__swatch--coral" aria-hidden="true"></span>
+        The lowest 5%: luck produces these only 1 time in 20
+      </li>
+      <li class="luck-board__key">
+        <span class="luck-board__swatch luck-board__swatch--ring" aria-hidden="true"></span>
+        The page's real clicks: below half of expected and inside the 5% tail, so it counts as a
+        real shortfall
+      </li>
+    </ul>
+  </figcaption>
+</figure>
+
+<script>
+  import "@/scripts/loops.ts";
+</script>
+
+<style>
+  .luck-board {
+    display: grid;
+    gap: var(--space-5);
+    align-items: center;
+    padding: var(--space-5);
+    margin: 0;
+    background: radial-gradient(ellipse 80% 100% at 32% 75%, #54e3991c, transparent), var(--night);
+    border: 1px solid var(--night-line);
+    border-radius: var(--radius-card-large);
+  }
+
+  .luck-board__art {
+    width: 100%;
+    height: auto;
+  }
+
+  .luck-board__baseline {
+    stroke: var(--night-line);
+  }
+
+  .luck-board__cutoff {
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+  }
+
+  .luck-board__cutoff--expected {
+    stroke: var(--mint-soft);
+  }
+
+  .luck-board__cutoff--half {
+    stroke: var(--coral);
+  }
+
+  .luck-board__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    fill: var(--on-night-2);
+  }
+
+  .luck-board__label--expected {
+    fill: var(--mint-soft);
+  }
+
+  .luck-board__label--half {
+    fill: var(--coral);
+  }
+
+  .luck-board__label--page {
+    fill: var(--on-night);
+  }
+
+  .luck-board__dot {
+    fill: var(--accent);
+    fill-opacity: 0.7;
+  }
+
+  .luck-board__dot--top {
+    fill: #7eefc1;
+    fill-opacity: 1;
+  }
+
+  .luck-board__dot--coral {
+    fill: var(--coral);
+    fill-opacity: 0.8;
+  }
+
+  .luck-board__ring {
+    fill: none;
+    stroke: var(--on-night);
+    stroke-width: 2.2;
+  }
+
+  .luck-board__ring--outer {
+    stroke-opacity: 0.35;
+    stroke-width: 1.7;
+  }
+
+  .luck-board__actual-dot {
+    fill: var(--on-night);
+  }
+
+  /* Scales and drops each shape around its own center instead of the whole drawing's origin. */
+  .luck-board__dot,
+  .luck-board__actual {
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+
+  .luck-board__caption {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .luck-board__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--on-night);
+  }
+
+  .luck-board__body {
+    font-size: var(--text-small);
+    line-height: 1.5;
+    color: var(--on-night-2);
+  }
+
+  .luck-board__keys {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-small);
+    line-height: 1.45;
+    list-style: none;
+  }
+
+  .luck-board__key {
+    display: grid;
+    grid-template-columns: 0.875rem minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    color: #c9d2cf;
+  }
+
+  .luck-board__swatch {
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-block-start: 0.375rem;
+    background-color: var(--accent);
+    border-radius: 50%;
+  }
+
+  .luck-board__swatch--coral {
+    background-color: var(--coral);
+  }
+
+  .luck-board__swatch--ring {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-block-start: 0.1875rem;
+    background: none;
+    border: 2px solid var(--on-night);
+  }
+
+  @media (width >= 48rem) {
+    .luck-board {
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      padding: var(--space-6);
+    }
+  }
+
+  /* The drop animation runs only for people who have not asked for reduced motion, and everyone else sees the settled board. */
+  @media (prefers-reduced-motion: no-preference) {
+    .luck-board__dot {
+      animation: luck-drop 9s cubic-bezier(0.34, 1.2, 0.64, 1) both infinite;
+      animation-delay: var(--delay);
+    }
+
+    .luck-board__actual {
+      animation: luck-actual 9s ease-out both infinite;
+      animation-delay: var(--delay);
+    }
+
+    /* With JavaScript the animation stays paused until the script marks the board as playing. */
+    :global(html.js) .luck-board:not([data-playing]) * {
+      animation-play-state: paused;
+    }
+  }
+
+  /* A chance dot falls in, stays visible for most of the loop, and fades out before the next pass. */
+  @keyframes luck-drop {
+    0% {
+      opacity: 0;
+      transform: translateY(-11rem);
+    }
+
+    5%,
+    80% {
+      opacity: 1;
+      transform: none;
+    }
+
+    88%,
+    100% {
+      opacity: 0;
+      transform: none;
+    }
+  }
+
+  /* The page's real month falls in, pulses twice to draw the eye, then fades out earlier than the chance dots. */
+  @keyframes luck-actual {
+    0% {
+      opacity: 0;
+      transform: translateY(-11rem);
+    }
+
+    5% {
+      opacity: 1;
+      transform: none;
+    }
+
+    10% {
+      transform: scale(1.25);
+    }
+
+    15% {
+      transform: none;
+    }
+
+    20% {
+      transform: scale(1.25);
+    }
+
+    25%,
+    52% {
+      opacity: 1;
+      transform: none;
+    }
+
+    58%,
+    100% {
+      opacity: 0;
+      transform: none;
+    }
+  }
+</style>

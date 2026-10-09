@@ -1,0 +1,221 @@
+---
+/**
+ * An animated grid of tiles that light up one by one in rank order, showing a month's review list being worked through.
+ * The tiles snake across the grid and a thread joins their centers, so the eye follows the rank order.
+ */
+
+import { range } from "d3-array";
+
+import geometry from "@/illustrations/geometry.json";
+
+/** The grid size, the corner of the first tile, and the tile size and spacing, all read from the design frames. */
+const { columns, rows, originX, originY, tile, pitch } = geometry.queue;
+/** The pause in seconds between one tile lighting and the next, which only feeds the `delay` field that the markup does not read. */
+const STEP_S = 0.12;
+/** The decimal places kept in the delays. */
+const DECIMALS = 2;
+/** Two, used to tell even rows from odd ones and to find the center of a tile. */
+const HALF = 2;
+/** The index of the last column, used to run odd rows from right to left. */
+const LAST_COLUMN = columns - 1;
+
+/**
+ * Finds the column a tile sits in so that the rank order snakes across the grid.
+ * @param row - The row index, starting at 0.
+ * @param step - The position along the row in rank order, starting at 0.
+ * @returns The column index, counting left to right on even rows and right to left on odd rows.
+ */
+const columnAt = (row: number, step: number): number => {
+  // Even rows run left to right.
+  if (row % HALF === 0) {
+    return step;
+  }
+  // Odd rows run right to left, so the last tile of one row sits above the first tile of the next.
+  return LAST_COLUMN - step;
+};
+
+/** Every tile with its rank and the position of its top left corner, listed in rank order. */
+const tiles = range(rows).flatMap((row) =>
+  range(columns).map((step) => {
+    const rank = row * columns + step;
+    const left = originX + columnAt(row, step) * pitch;
+    const top = originY + row * pitch;
+    return { delay: `${(rank * STEP_S).toFixed(DECIMALS)}s`, left, rank, top };
+  })
+);
+/** The points of the thread, one at the center of each tile in rank order. */
+const thread = tiles
+  .map((cell) => `${cell.left + tile / HALF},${cell.top + tile / HALF}`)
+  .join(" ");
+/** The number of tiles, shown in the caption and the accessible label. */
+const total = tiles.length;
+---
+
+{/* The `data-loop` flag lets `loops.ts` pause the animation while the grid is off screen. */}
+<figure
+  class="queue-tiles"
+  data-loop
+  aria-label={`A month's review list: ${total} pages, lit in rank order`}
+>
+  <svg class="queue-tiles__art" viewBox="120 35 560 290" aria-hidden="true" focusable="false">
+    {/* The gradient that fills a lit tile, which the CSS refers to by its id. */}
+    <defs>
+      <linearGradient id="queue-tiles-lit" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#54e399"></stop>
+        <stop offset="1" stop-color="#3fbf80"></stop>
+      </linearGradient>
+    </defs>
+    {/* The thread joins the tile centers, and `pathLength="1"` lets the CSS draw it as a fraction. */}
+    <polyline class="queue-tiles__thread" points={thread} pathLength="1"></polyline>
+    {/* Each tile has a dim base and a lit overlay, and its rank decides when the overlay appears. */}
+    {tiles.map((cell) => (
+      <g class="queue-tiles__tile" style={`--rank: ${cell.rank}`}>
+        <rect
+          class="queue-tiles__dim"
+          x={cell.left}
+          y={cell.top}
+          width={tile}
+          height={tile}
+          rx="10"
+        />
+        <rect
+          class="queue-tiles__lit"
+          x={cell.left}
+          y={cell.top}
+          width={tile}
+          height={tile}
+          rx="10"
+        />
+      </g>
+    ))}
+  </svg>
+  {/* The counter ticks up through a CSS counter, and the plain number stays for assistive tech and for people without motion. */}
+  <p class="queue-tiles__count">
+    <span class="queue-tiles__number">{total}</span> of {total}
+  </p>
+</figure>
+
+<script>
+  import "@/scripts/loops.ts";
+</script>
+
+<style>
+  /* Registered properties let the browser animate these numbers smoothly, which plain custom properties cannot do. */
+  @property --queue-lit {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 50;
+  }
+
+  @property --queue-fade {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 1;
+  }
+
+  @property --queue-count {
+    syntax: "<integer>";
+    inherits: true;
+    initial-value: 50;
+  }
+
+  .queue-tiles {
+    position: relative;
+    padding: var(--space-5) var(--space-5) var(--space-6);
+    margin: 0;
+    background: radial-gradient(ellipse 120% 140% at 30% 40%, #54e3991f, transparent), var(--night);
+    border-radius: var(--radius-card-large);
+  }
+
+  .queue-tiles__art {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .queue-tiles__thread {
+    opacity: var(--queue-fade);
+    fill: none;
+    stroke: var(--mint-soft);
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+
+    /* With a path length of 1 the thread is hidden at an offset of 1 and drawn in full at 0, so it grows with the lit count out of 50. */
+    stroke-dashoffset: calc(1 - var(--queue-lit) / 50);
+  }
+
+  .queue-tiles__dim {
+    fill: var(--night-raised);
+    stroke: var(--night-line);
+  }
+
+  .queue-tiles__lit {
+    /* A tile fades in over a quarter of a step once the lit count passes its rank, then follows the shared fade-out. */
+    opacity: calc(clamp(0, (var(--queue-lit) - var(--rank)) * 4, 1) * var(--queue-fade));
+    fill: url("#queue-tiles-lit");
+  }
+
+  .queue-tiles__count {
+    position: absolute;
+    inset-block-end: var(--space-4);
+    inset-inline-end: var(--space-5);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--on-night-2);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .queue-tiles {
+      animation: queue-clock 9s linear infinite;
+    }
+
+    /* The counter takes its value from the animated `--queue-count`, and the `::before` below prints it. */
+    .queue-tiles__count {
+      counter-reset: queue var(--queue-count);
+    }
+
+    .queue-tiles__count::before {
+      content: counter(queue);
+    }
+
+    /* Hides the real number visually while the animated one shows, but keeps it for assistive tech. */
+    .queue-tiles__number {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    /* With JavaScript the animation stays paused until the script marks the grid as playing. */
+    :global(html.js) .queue-tiles:not([data-playing]) {
+      animation-play-state: paused;
+    }
+  }
+
+  /* One clock drives the tiles, the thread, and the count by animating `--queue-lit`, `--queue-count`, and `--queue-fade`. */
+  @keyframes queue-clock {
+    0% {
+      --queue-lit: 0;
+      --queue-count: 0;
+      --queue-fade: 1;
+    }
+
+    67%,
+    83% {
+      --queue-lit: 50;
+      --queue-count: 50;
+      --queue-fade: 1;
+    }
+
+    92%,
+    100% {
+      --queue-lit: 50;
+      --queue-count: 50;
+      --queue-fade: 0;
+    }
+  }
+</style>

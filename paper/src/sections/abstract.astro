@@ -1,0 +1,175 @@
+---
+import Card from "@/components/card.astro";
+import funnel from "@/data/funnel.json";
+import type { FunnelStage } from "@/data/types";
+import { formatCompact } from "@/charts/scales.ts";
+
+const records = (funnel as readonly FunnelStage[]).find((stage) => stage.key === "records");
+if (records === undefined) {
+  throw new Error("funnel.json has no records stage.");
+}
+
+const meta = [
+  { key: "Author", parts: ["Neil Ivan Orencia"] },
+  { key: "Program, Lane 4", parts: ["FlyRank ML Internship"] },
+  { key: "Data", parts: ["Feb-Jun 2026,", `${formatCompact(records.value)} rows`] },
+  { key: "Published", parts: ["October 2026"] },
+] as const;
+---
+
+<section class="section" id="abstract" aria-labelledby="abstract-title">
+  <div class="column stack" data-reveal>
+    <dl class="abstract__byline">
+      {meta.map((item) => (
+        <div class="abstract__meta">
+          <dt class="abstract__key">{item.key}</dt>
+          <dd class="abstract__value">
+            {item.parts.map((part) => (
+              <>
+                <span class="abstract__part">{part}</span>{" "}
+              </>
+            ))}
+          </dd>
+        </div>
+      ))}
+    </dl>
+    <Card size="large">
+      <h2 class="abstract__title" id="abstract-title">
+        Abstract
+      </h2>
+      <p class="abstract__lead">
+        Content teams need to know which existing pages are losing clicks they should be getting,
+        and whether that loss will last long enough to be worth fixing.
+      </p>
+      <p>
+        Using FlyRank's warehouse of 78.8 million daily Search Console records across about 50
+        client sites, each page's clicks were compared with what its exact position and its own site
+        predict. A page counted as a real shortfall only when it earned at most half of that and a
+        negative binomial test ruled out bad luck.
+      </p>
+      <p>
+        Real shortfalls proved persistent: a page with one this month was 3.8 to 4.8 times as likely
+        to have one next month, including on a sealed month no analysis had touched. A transparent
+        rule and a logistic regression model found those pages about equally well at the top of the
+        list, 46 to 47 real shortfalls in 50 picks against a base rate of 2.2%. The result is a
+        monthly review list, ordered by the rule and labelled with the model's confidence.
+      </p>
+    </Card>
+  </div>
+</section>
+
+<style>
+  .abstract__byline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+
+  .abstract__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    padding: var(--space-4) var(--space-5);
+    border-block-end: 1px solid var(--line);
+
+    &:last-child {
+      border-block-end: 0;
+    }
+  }
+
+  .abstract__key,
+  .abstract__value {
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .abstract__key {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    color: var(--ink-2);
+
+    &::before {
+      flex: none;
+      width: 0.375rem;
+      height: 0.375rem;
+      content: "";
+      background-color: var(--accent);
+      border-radius: 50%;
+    }
+  }
+
+  .abstract__value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .abstract__part {
+    display: inline-block;
+  }
+
+  @media (width >= 40rem) {
+    .abstract__byline {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .abstract__meta {
+      gap: var(--space-1);
+      padding: var(--space-5) var(--space-6);
+
+      &:nth-child(odd) {
+        border-inline-end: 1px solid var(--line);
+      }
+
+      &:nth-child(n + 3) {
+        border-block-end: 0;
+      }
+    }
+
+    .abstract__value {
+      font-size: 1rem;
+    }
+  }
+
+  @media (width >= 56rem) {
+    .abstract__byline {
+      grid-template-columns: repeat(4, auto);
+    }
+
+    .abstract__meta {
+      padding: var(--space-5) var(--space-4);
+
+      &:nth-child(odd) {
+        border-inline-end: 0;
+      }
+
+      &:nth-child(-n + 2) {
+        border-block-end: 0;
+      }
+
+      &:not(:first-child) {
+        border-inline-start: 1px solid var(--line);
+      }
+    }
+  }
+
+  .abstract__title {
+    font-size: var(--text-h2);
+  }
+
+  .abstract__lead {
+    font-size: var(--text-lead);
+    line-height: 1.45;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+</style>

@@ -1,0 +1,500 @@
+---
+/**
+ * A floating contents button that opens a reading map of the paper's sections.
+ * The button ring, the percent and minutes read-out, and each link's state are driven by `@/scripts/toc.ts` through the `data-toc-*` hooks.
+ */
+
+import CheckIcon from "@phosphor-icons/core/assets/regular/check.svg";
+import FileTextIcon from "@phosphor-icons/core/assets/regular/file-text.svg";
+import HandshakeIcon from "@phosphor-icons/core/assets/regular/handshake.svg";
+
+/** One link in the contents panel. */
+interface Section {
+  /** The id of the section on the page, as an in-page link. */
+  readonly href: string;
+  /** A glyph shown in place of a number for sections that have none. */
+  readonly icon?: "file" | "handshake";
+  readonly label: string;
+  /** The section number, or an empty string when the glyph stands in for it. */
+  readonly number: string;
+}
+
+/** A titled run of sections in the panel. */
+interface Group {
+  readonly label: string;
+  readonly sections: readonly Section[];
+}
+
+/** The panel's sections in reading order, split into the paper itself and the parts for using it. */
+const groups: readonly Group[] = [
+  {
+    label: "Paper",
+    sections: [
+      { href: "#abstract", icon: "file", label: "Abstract", number: "" },
+      { href: "#question", label: "Question", number: "01" },
+      { href: "#data", label: "Data", number: "02" },
+      { href: "#method", label: "Method", number: "03" },
+      { href: "#results", label: "Results", number: "04" },
+      { href: "#limitations", label: "Limitations", number: "05" },
+    ],
+  },
+  {
+    label: "Using it",
+    sections: [
+      { href: "#playbook", label: "Playbook", number: "06" },
+      { href: "#reproducibility", label: "Reproducibility", number: "07" },
+      {
+        href: "#acknowledgments",
+        icon: "handshake",
+        label: "Acknowledgments & data credit",
+        number: "",
+      },
+    ],
+  },
+];
+---
+
+{/* The wrapper is the root that `toc.ts` finds, and it carries the `data-visible`, `data-open`, and `data-live` flags. */}
+<div class="toc-button" data-toc>
+  {/* The round toggle opens the panel through the popover API, so it works as a button even before the script runs. */}
+  <button
+    class="toc-button__toggle"
+    type="button"
+    popovertarget="toc-panel"
+    aria-label="Contents"
+    data-toc-toggle
+  >
+    {/* A ring around the button that fills with reading progress, where `pathLength="1"` lets the script set the fill as a fraction. */}
+    <svg class="toc-button__ring" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
+      <circle class="toc-button__track" cx="26" cy="26" r="22.8" pathLength="1"></circle>
+      <circle
+        class="toc-button__progress"
+        cx="26"
+        cy="26"
+        r="22.8"
+        pathLength="1"
+        data-toc-progress
+      ></circle>
+    </svg>
+    {/* Three bars that turn into a cross while the panel is open. */}
+    <span class="toc-button__lines" aria-hidden="true">
+      <span class="toc-button__line toc-button__line--top"></span>
+      <span class="toc-button__line toc-button__line--middle"></span>
+      <span class="toc-button__line toc-button__line--bottom"></span>
+    </span>
+  </button>
+  {/* The panel is a manual popover, so the script decides when it closes and can play the outro first. */}
+  <nav class="toc-button__panel" id="toc-panel" popover="manual" aria-labelledby="toc-title">
+    <div class="toc-button__head">
+      <p class="toc-button__title" id="toc-title">
+        Contents
+      </p>
+      <p class="toc-button__meta">
+        <span data-toc-percent></span>
+        <span class="toc-button__dot" aria-hidden="true"></span>
+        <span data-toc-minutes></span>
+      </p>
+    </div>
+    {/* One block per group, with an ordered list of links whose state the script sets as `read`, `current`, or `upcoming`. */}
+    {groups.map((group) => (
+      <div class="toc-button__group">
+        <p class="toc-button__group-label">{group.label}</p>
+        <ol class="toc-button__list">
+          {group.sections.map((section) => (
+            <li>
+              <a class="toc-button__item" href={section.href} data-toc-link>
+                <span class="toc-button__state" aria-hidden="true">
+                  <CheckIcon class="toc-button__check" />
+                </span>
+                <span class="toc-button__number">
+                  {section.icon === "file" && <FileTextIcon class="toc-button__glyph" />}
+                  {section.icon === "handshake" && <HandshakeIcon class="toc-button__glyph" />}
+                  {section.number}
+                </span>
+                <span class="toc-button__label">{section.label}</span>
+                <span class="toc-button__bar" aria-hidden="true" />
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    ))}
+  </nav>
+</div>
+
+<script>
+  import "@/scripts/toc.ts";
+</script>
+
+<style>
+  .toc-button {
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+    position: fixed;
+    inset-block-end: var(--space-5);
+    inset-inline-start: var(--space-5);
+
+    /* Keeps the floating button above the page content. */
+    z-index: 20;
+    transition:
+      opacity 280ms var(--ease-out),
+      transform 280ms var(--ease-out);
+  }
+
+  /* With JavaScript the button stays hidden until `toc.ts` sets `data-visible`, which happens once the hero has scrolled away. */
+  :global(html.js) .toc-button:not([data-visible]) {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.9);
+  }
+
+  .toc-button__toggle {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0;
+    color: var(--ink);
+    cursor: pointer;
+    background-color: var(--surface);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: var(--shadow-float);
+    transition: transform 200ms var(--ease-out);
+
+    &:hover {
+      transform: scale(1.04);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  .toc-button__ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+
+    /* Starts the ring at the top instead of at the right, the default start of an SVG circle. */
+    transform: rotate(-90deg);
+  }
+
+  .toc-button__track,
+  .toc-button__progress {
+    fill: none;
+    stroke-width: 2.4;
+  }
+
+  .toc-button__track {
+    stroke: var(--line);
+  }
+
+  .toc-button__progress {
+    stroke: var(--accent-ink);
+    stroke-linecap: round;
+
+    /* With a path length of 1 the ring is empty at an offset of 1 and full at 0, and the script sets the offset. */
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .toc-button__lines {
+    position: relative;
+    width: 1.125rem;
+    height: 0.875rem;
+  }
+
+  .toc-button__line {
+    position: absolute;
+    inset-inline-start: 0;
+    height: 2px;
+    background-color: currentcolor;
+    border-radius: 1px;
+    transition:
+      width 220ms var(--ease-out),
+      opacity 160ms ease-out,
+      transform 320ms var(--ease-spring);
+  }
+
+  .toc-button__line--top {
+    inset-block-start: 0;
+    width: 100%;
+  }
+
+  .toc-button__line--middle {
+    inset-block-start: calc(50% - 1px);
+    width: 66%;
+    transform-origin: left;
+  }
+
+  .toc-button__line--bottom {
+    inset-block-end: 0;
+    width: 82%;
+  }
+
+  /* The bars become a cross when the script marks the panel open, or by the popover state alone while the script is not running. */
+  .toc-button[data-open],
+  .toc-button:not([data-live]):has(.toc-button__panel:popover-open) {
+    .toc-button__line--top {
+      width: 100%;
+      transform: translateY(0.375rem) rotate(45deg);
+    }
+
+    .toc-button__line--middle {
+      opacity: 0;
+      transform: scaleX(0.2);
+    }
+
+    .toc-button__line--bottom {
+      width: 100%;
+      transform: translateY(-0.375rem) rotate(-45deg);
+    }
+  }
+
+  .toc-button__panel {
+    position: fixed;
+    inset: auto auto calc(var(--space-5) + 3.25rem + var(--space-3)) var(--space-5);
+    width: min(21rem, 100vw - 2 * var(--space-5));
+    max-height: calc(100dvh - 7rem);
+    padding: var(--space-4) var(--space-3) var(--space-3);
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color: var(--ink-body);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card-large);
+    box-shadow:
+      0 2px 6px #06191b14,
+      0 18px 48px #06191b33;
+    transform-origin: bottom left;
+
+    &:popover-open {
+      animation: toc-in 360ms var(--ease-out) both;
+    }
+
+    &:popover-open[data-closing] {
+      animation: toc-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+    }
+  }
+
+  @keyframes toc-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.94);
+    }
+  }
+
+  @keyframes toc-out {
+    to {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.95);
+    }
+  }
+
+  .toc-button__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+
+    /* The negative margin pulls the head out over the panel's padding, so the rule under it runs edge to edge, and the padding puts the text back in line. */
+    padding: var(--space-1) calc(2 * var(--space-3)) var(--space-3);
+    margin-block-end: var(--space-2);
+    margin-inline: calc(-1 * var(--space-3));
+    border-block-end: 1px solid var(--line);
+  }
+
+  .toc-button__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .toc-button__meta {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--ink-2);
+  }
+
+  .toc-button__dot {
+    width: 3px;
+    height: 3px;
+    background-color: currentcolor;
+    border-radius: 50%;
+  }
+
+  /* The percent and minutes read-out is only meaningful once the script is running. */
+  .toc-button:not([data-live]) .toc-button__meta {
+    display: none;
+  }
+
+  .toc-button__group {
+    padding-block: var(--space-2);
+  }
+
+  .toc-button__group-label {
+    padding: var(--space-1) var(--space-3) var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .toc-button__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .toc-button__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1rem 1.5rem minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 var(--space-3);
+    overflow: hidden;
+    font-size: 0.9375rem;
+    color: var(--ink-body);
+    text-decoration: none;
+    border-radius: var(--radius-small);
+    transition:
+      background-color 200ms ease-out,
+      color 200ms ease-out;
+
+    &:hover {
+      background-color: var(--bg-alt);
+    }
+  }
+
+  .toc-button__state {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+
+    &::before {
+      width: 0.4375rem;
+      height: 0.4375rem;
+      content: "";
+      border: 1.5px solid var(--line);
+      border-radius: 50%;
+      transition:
+        background-color 200ms ease-out,
+        border-color 200ms ease-out,
+        transform 240ms var(--ease-spring);
+    }
+  }
+
+  .toc-button__check {
+    position: absolute;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--accent-ink);
+    opacity: 0;
+    transform: scale(0.6);
+    transition:
+      opacity 200ms ease-out,
+      transform 240ms var(--ease-spring);
+  }
+
+  .toc-button__number {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink-2);
+  }
+
+  .toc-button__glyph {
+    width: 0.9375rem;
+    height: 0.9375rem;
+    color: var(--ink-2);
+  }
+
+  .toc-button__item[data-state="current"] .toc-button__glyph {
+    color: var(--accent-ink);
+  }
+
+  .toc-button__label {
+    min-width: 0;
+  }
+
+  .toc-button__bar {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 0;
+    height: 3px;
+    background-color: var(--accent-ink);
+    opacity: 0;
+
+    /* Clips the bar from the right so its visible width equals the progress through the section that the script sets. */
+    clip-path: inset(0 calc((1 - var(--section-progress, 0)) * 100%) 0 0 round 0 999px 999px 0);
+  }
+
+  /* The script sets `data-state` on each link, where `read` shows a check and `current` highlights the row and its progress bar. */
+  .toc-button__item[data-state="read"] {
+    color: var(--ink-2);
+
+    .toc-button__state::before {
+      opacity: 0;
+    }
+
+    .toc-button__check {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .toc-button__item[data-state="current"] {
+    font-weight: 600;
+    color: var(--ink);
+    background-color: var(--accent-wash);
+
+    .toc-button__state::before {
+      background-color: var(--accent-ink);
+      border-color: var(--accent-ink);
+      transform: scale(1.15);
+    }
+
+    .toc-button__number {
+      color: var(--accent-ink);
+    }
+
+    .toc-button__bar {
+      opacity: 1;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .toc-button {
+      inset-block-end: var(--space-6);
+      inset-inline-start: var(--space-6);
+    }
+
+    .toc-button__panel {
+      inset-block-end: calc(var(--space-6) + 3.25rem + var(--space-3));
+      inset-inline-start: var(--space-6);
+    }
+  }
+
+  @media print {
+    .toc-button {
+      display: none;
+    }
+  }
+</style>

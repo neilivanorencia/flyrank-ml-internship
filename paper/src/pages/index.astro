@@ -1,0 +1,66 @@
+---
+/**
+ * The paper's single page, which stacks the sections in reading order inside the base layout.
+ * It owns the page title and description and the floating parts that sit outside the sections.
+ */
+
+import ChartTooltip from "@/components/chart-tooltip.astro";
+import Navigation from "@/components/navigation.astro";
+import SiteFooter from "@/components/site-footer.astro";
+import TocButton from "@/components/toc-button.astro";
+import BaseLayout from "@/layouts/base.astro";
+import Abstract from "@/sections/abstract.astro";
+import Close from "@/sections/close.astro";
+import Data from "@/sections/data.astro";
+import Hero from "@/sections/hero.astro";
+import Limitations from "@/sections/limitations.astro";
+import Method from "@/sections/method.astro";
+import Playbook from "@/sections/playbook.astro";
+import Question from "@/sections/question.astro";
+import ResultsBand from "@/sections/results-band.astro";
+import Results from "@/sections/results.astro";
+
+/** The page title, which is also used for the social cards and the structured data. */
+const title = "FlyRank ML Capstone — Click Shortfall: Pages Losing Clicks";
+/** The research question, which the structured data uses as the article headline. */
+const headline = "Which pages keep losing the clicks they should be getting?";
+/** The page summary shown in search results and social cards. */
+const description =
+  "Which pages keep losing the clicks they should be getting? A test of whether the shortfall is more than bad luck, and whether it lasts into next month.";
+---
+
+<BaseLayout description={description} headline={headline} title={title}>
+  {/* The navigation sits in a header that floats over the hero. */}
+  <header class="page__header">
+    <div class="wide">
+      <Navigation />
+    </div>
+  </header>
+  {/* The sections in reading order, where the `main` id is the target of the skip link and the brand link. */}
+  <main id="main">
+    <Hero />
+    <Abstract />
+    <Question />
+    <Data />
+    <Method />
+    <ResultsBand />
+    <Results />
+    <Limitations />
+    <Playbook />
+    <Close />
+  </main>
+  <SiteFooter />
+  {/* The floating contents button and the shared chart tooltip belong to the whole page, not to one section. */}
+  <TocButton />
+  <ChartTooltip />
+</BaseLayout>
+
+<style>
+  /* Floats the navigation over the top of the hero instead of pushing the hero down. */
+  .page__header {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 10;
+  }
+</style>

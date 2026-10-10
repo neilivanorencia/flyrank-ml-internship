@@ -1,0 +1,315 @@
+---
+import ArticleIcon from "@phosphor-icons/core/assets/regular/article.svg";
+import GlobeIcon from "@phosphor-icons/core/assets/regular/globe-simple.svg";
+import HourglassIcon from "@phosphor-icons/core/assets/regular/hourglass-medium.svg";
+import MagnifierIcon from "@phosphor-icons/core/assets/regular/magnifying-glass.svg";
+import PencilIcon from "@phosphor-icons/core/assets/regular/pencil-simple-line.svg";
+import ShoppingBagIcon from "@phosphor-icons/core/assets/regular/shopping-bag.svg";
+
+import QueueTradeoff from "@/charts/queue-tradeoff.astro";
+import SectionHeader from "@/components/section-header.astro";
+import QueueTiles from "@/illustrations/queue-tiles.astro";
+
+const steps = [
+  {
+    action: "Check indexing and rankings",
+    condition: "Impressions halved since last month",
+    icon: MagnifierIcon,
+    why: "When impressions halve, the page is leaving the search results: fewer people see it at all, so a better title will not help. Check that it is still indexed and where it ranks first.",
+  },
+  {
+    action: "Wait and re-check next month",
+    condition: "Daily position spread of 5+ places",
+    icon: HourglassIcon,
+    why: "When the daily position swings by five places or more, the shortfall may just be the rank settling. These pages repeated least often (19%), so waiting a month is usually cheaper than rewriting.",
+  },
+  {
+    action: "Review site-wide",
+    condition: "Whole site clicks under half its expected",
+    icon: GlobeIcon,
+    why: "When the whole site clicks at under half of what its positions predict, the problem is probably site-wide, such as how the brand appears in results, rather than this one page.",
+  },
+  {
+    action: "Check the results page first",
+    condition: "Buying-intent keyword",
+    icon: ShoppingBagIcon,
+    why: "For buying-intent keywords, ads and shopping results often sit above the page and take the clicks. Look at the live results page before changing anything on the page itself.",
+  },
+  {
+    action: "Improve the content",
+    condition: "Most visitors leave without engaging",
+    icon: ArticleIcon,
+    why: "When GA4 shows most visitors leaving without engaging, the page disappoints once clicked, which in time teaches searchers to skip it. Improve the content itself.",
+  },
+  {
+    action: "Rewrite the title and description",
+    condition: "Otherwise",
+    icon: PencilIcon,
+    why: "If none of the above applies, the snippet people see in Google, its title and description, is the most likely reason the page is skipped. Rewrite it to match what searchers want.",
+  },
+] as const;
+---
+
+<section class="section" id="playbook" aria-labelledby="playbook-title">
+  <div class="column stack" data-reveal>
+    <SectionHeader
+      id="playbook-title"
+      number="6"
+      title="Playbook"
+      lead="Fifty pages a month, one first action each, ordered by the rule and labelled by the model."
+    />
+    <p>
+      Once a month: rank every page with a real shortfall by missed clicks, take the first 50 with
+      at most 10 per client, label each with the model's confidence, and give each one first action,
+      checked in this order.
+    </p>
+    <QueueTiles />
+    <div class="playbook__rail-wrap" data-rail>
+      <span class="playbook__fill" aria-hidden="true"></span>
+      <span class="playbook__tip" aria-hidden="true"></span>
+      <ol class="playbook__ladder">
+        {steps.map((step, index) => (
+          <li class="playbook__step" data-rail-step>
+            <span class="playbook__rail">
+              <span
+                data-rail-badge
+                class:list={[
+                  "playbook__badge",
+                  { "playbook__badge--last": index === steps.length - 1 },
+                ]}
+              >
+                <step.icon class="playbook__badge-icon" aria-hidden="true" />
+              </span>
+            </span>
+            <div class="playbook__text">
+              <div class="playbook__when">
+                <span class="playbook__tag">if</span>
+                <p class="playbook__condition">{step.condition}</p>
+              </div>
+              <div class="playbook__then">
+                <span class="playbook__tag">then</span>
+                <p class="playbook__action">{step.action}</p>
+                <p class="playbook__why">{step.why}</p>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <QueueTradeoff
+      title="A longer list holds more missed clicks, at a lower hit rate"
+      subtitle="May back-test, judged on June. Hit rate counts only pages FlyRank left alone."
+      caption="Fig. 4. The chosen list (highlighted) keeps 50 pages, about what one editor can check properly, at a 94% hit rate. The 10-per-client cap costs some clicks (9.2% against 12.5%) so one site cannot fill a month's list."
+    />
+  </div>
+</section>
+
+<script>
+  import "@/scripts/rail.ts";
+</script>
+
+<style>
+  .playbook__ladder {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .playbook__step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+
+  .playbook__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &::after {
+      flex: 1;
+      width: 1px;
+      min-height: 1rem;
+      content: "";
+      background-color: var(--line);
+    }
+  }
+
+  .playbook__step:last-child .playbook__rail::after {
+    display: none;
+  }
+
+  .playbook__badge {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--ink);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    isolation: isolate;
+    transition:
+      background-color 200ms ease-out,
+      border-color 200ms ease-out,
+      box-shadow 400ms ease-out,
+      color 260ms ease-out;
+  }
+
+  .playbook__badge--last {
+    color: var(--on-night);
+    background-color: var(--night);
+    border-color: var(--night);
+  }
+
+  .playbook__badge-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .playbook__text {
+    display: grid;
+    gap: var(--space-3) var(--space-5);
+    padding-block: 0.625rem var(--space-6);
+    transition: opacity 240ms ease-out;
+  }
+
+  .playbook__when,
+  .playbook__then {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .playbook__tag {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    color: var(--ink-2);
+  }
+
+  .playbook__condition {
+    font-size: var(--text-label);
+    line-height: 1.45;
+    color: var(--ink-body);
+  }
+
+  .playbook__action {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+
+  .playbook__why {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  @media (width >= 48rem) {
+    .playbook__text {
+      grid-template-columns: 15rem minmax(0, 1fr);
+    }
+  }
+
+  .playbook__rail-wrap {
+    --rail-x: 1.375rem;
+
+    position: relative;
+  }
+
+  .playbook__fill,
+  .playbook__tip {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+  }
+
+  .playbook__fill {
+    inset-block-start: var(--rail-top, 0);
+    inset-inline-start: calc(var(--rail-x) - 1px);
+    z-index: 1;
+    width: 2px;
+    height: var(--rail-length, 0);
+    background: linear-gradient(to bottom, var(--accent-ink), var(--accent));
+    border-radius: 1px;
+    transform: scaleY(var(--rail-progress, 0));
+    transform-origin: top;
+  }
+
+  .playbook__tip {
+    inset-block-start: calc(var(--rail-top, 0) + var(--rail-progress, 0) * var(--rail-length, 0));
+    inset-inline-start: calc(var(--rail-x) - 0.3125rem);
+    z-index: 1;
+    width: 0.625rem;
+    height: 0.625rem;
+    background-color: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0.75rem var(--accent);
+    translate: 0 -50%;
+  }
+
+  .playbook__rail-wrap[data-live] .playbook__fill,
+  .playbook__rail-wrap[data-live] .playbook__tip {
+    display: block;
+  }
+
+  .playbook__badge::before {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    content: "";
+    background-color: var(--accent);
+    border-radius: 50%;
+    clip-path: circle(0% at 50% 0%);
+    transition: clip-path 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .playbook__step[data-lit] .playbook__badge {
+    color: var(--night);
+    border-color: var(--accent);
+    box-shadow: 0 0 1.25rem #54e39966;
+  }
+
+  .playbook__step[data-lit] .playbook__badge::before {
+    clip-path: circle(150% at 50% 0%);
+  }
+
+  .playbook__step[data-current] .playbook__badge::after {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    content: "";
+    background-color: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    animation: rail-pulse 1.8s ease-out infinite;
+  }
+
+  .playbook__rail-wrap[data-live] .playbook__step:not([data-lit]) .playbook__text {
+    opacity: 0.5;
+  }
+
+  @keyframes rail-pulse {
+    from {
+      opacity: 0.45;
+      transform: scale(1);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(2.2);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .playbook__step[data-current] .playbook__badge::after {
+      display: none;
+    }
+  }
+</style>

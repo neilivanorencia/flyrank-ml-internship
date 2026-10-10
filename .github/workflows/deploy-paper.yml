@@ -1,0 +1,98 @@
+name: deploy-paper
+
+# Builds the Astro paper in paper/ and publishes it to GitHub Pages, so the URL in
+# submission/paper_url.txt always serves the committed source. The build runs the
+# same steps as a local `pnpm data && pnpm build`, so a failing type check, a failing
+# headline-number check, or a failing post-build guard stops the deploy and the
+# previous version stays live.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "paper/**"
+      - "work/notebooks/capstone.ipynb"
+      - ".github/workflows/deploy-paper.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and a running deploy is never cancelled half way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # The husky install hook is for local commits, and CI has nothing to commit.
+  HUSKY: "0"
+  ASTRO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: paper
+    steps:
+      - uses: actions/checkout@v4
+
+      # The pnpm version comes from the "packageManager" field of paper/package.json.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: paper/package.json
+
+      # Node 24 runs scripts/extract-data.ts directly, which needs 22.18 or newer.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: paper/pnpm-lock.yaml
+
+      - name: Install dependencies from the lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract the paper's numbers from the capstone notebook
+        run: pnpm data
+
+      - name: Type check, build, and run the post-build guards
+        run: pnpm build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: paper/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify the live page like a stranger
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          code=000
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -s -o /tmp/page.html -w '%{http_code}' -L "$PAGE_URL" || echo 000)
+            if [ "$code" = "200" ]; then break; fi
+            echo "Attempt $attempt: HTTP $code, waiting for Pages to publish."
+            sleep 10
+          done
+          if [ "$code" != "200" ]; then
+            echo "::error::$PAGE_URL returned HTTP $code."
+            exit 1
+          fi
+          if ! grep -qi 'flyrank\.ai' /tmp/page.html; then
+            echo "::error::The live page is missing the flyrank.ai data credit."
+            exit 1
+          fi
+          echo "Live at $PAGE_URL with the flyrank.ai data credit."

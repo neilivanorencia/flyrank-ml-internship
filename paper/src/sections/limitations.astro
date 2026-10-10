@@ -1,0 +1,100 @@
+---
+import SectionHeader from "@/components/section-header.astro";
+import reach from "@/data/reach.json";
+import type { ReachRow } from "@/data/types";
+
+const bands = reach as readonly ReachRow[];
+const largest = bands.find((band) => band.band === "10,000 or more");
+const smallest = bands.find((band) => band.band === "Under 100");
+if (largest === undefined || smallest === undefined) {
+  throw new Error("reach.json is missing the largest or the smallest page-size band.");
+}
+
+const limits = [
+  {
+    text: "It shows where clicks are missing and that the gap lasts, not how many clicks a fix recovers. That needs an experiment: fix a random half of a month's list.",
+    title: "No measured gain",
+  },
+  {
+    text: "Every pattern here was observed in one company's portfolio over five months. Persistence means a shortfall tends to last, not that anything in particular caused it, and none of the findings is a causal claim.",
+    title: "Association, not cause",
+  },
+  {
+    text: "Each top-50 precision rests on just 50 pages, so a single page more or less moves the score by 0.02. That is why the uncertainty ranges are wide and no single lead of the model is clear of chance.",
+    title: "Fifty pages per test",
+  },
+  {
+    text: "It rules out tuning towards the test, not behaviour across seasons. Position mix has already drifted past the monitoring trigger.",
+    title: "One sealed month",
+  },
+  {
+    text: `Ruling out luck needs traffic: the queue reaches ${largest.inQueuePct}% of pages with 10,000+ impressions, ${smallest.inQueuePct}% of the smallest.`,
+    title: "Small pages are rarely judged",
+  },
+  {
+    text: "Most model misses lost their search visibility next month, which no click-based score foresees.",
+    title: "Visibility loss is a different problem",
+  },
+] as const;
+---
+
+<section
+  class="section section--alt backdrop backdrop--dots"
+  id="limitations"
+  aria-labelledby="limitations-title"
+>
+  <div class="column stack" data-reveal>
+    <SectionHeader
+      id="limitations-title"
+      number="5"
+      title="Limitations"
+      lead="What this work cannot claim, stated before a reader has to ask."
+    />
+    <dl class="limitations__list">
+      {limits.map((limit) => (
+        <div class="limitations__item">
+          <dt class="limitations__key">{limit.title}</dt>
+          <dd class="limitations__value">{limit.text}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<style>
+  .limitations__list {
+    margin: 0;
+    border-block-end: 1px solid var(--line);
+  }
+
+  .limitations__item {
+    display: grid;
+    gap: var(--space-2) var(--space-6);
+    padding-block: var(--space-5);
+    border-block-start: 1px solid var(--line);
+  }
+
+  .limitations__key,
+  .limitations__value {
+    margin: 0;
+  }
+
+  .limitations__key {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+
+  .limitations__value {
+    font-size: var(--text-body);
+    line-height: 1.6;
+    color: var(--ink-body);
+  }
+
+  @media (width >= 48rem) {
+    .limitations__item {
+      grid-template-columns: 14rem minmax(0, 1fr);
+    }
+  }
+</style>

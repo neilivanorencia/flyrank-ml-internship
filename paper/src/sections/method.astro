@@ -1,0 +1,683 @@
+---
+import { range } from "d3-array";
+import ArrowDownIcon from "@phosphor-icons/core/assets/regular/arrow-down.svg";
+import CheckCircleIcon from "@phosphor-icons/core/assets/regular/check-circle.svg";
+import DiceIcon from "@phosphor-icons/core/assets/regular/dice-five.svg";
+import LockIcon from "@phosphor-icons/core/assets/regular/lock-simple.svg";
+import LockOpenIcon from "@phosphor-icons/core/assets/regular/lock-simple-open.svg";
+
+import Card from "@/components/card.astro";
+import LuckBoard from "@/illustrations/luck-board.astro";
+import SectionHeader from "@/components/section-header.astro";
+import UnderTheHood from "@/components/under-the-hood.astro";
+import flag from "@/lib/attribute";
+
+const terms = [
+  { key: "this month", value: "impressions" },
+  { key: "per position", value: "position click rate" },
+  { key: "per site", value: "site factor" },
+] as const;
+
+const months = ["Feb to Mar", "Mar to Apr", "Apr to May", "May to Jun"] as const;
+type Cell = "empty" | "sealed" | "test" | "train";
+const walkForward: readonly { cells: readonly Cell[]; label: string }[] = [
+  { cells: ["train", "test", "empty", "empty"], label: "Test 1" },
+  { cells: ["train", "train", "test", "empty"], label: "Test 2" },
+  { cells: ["train", "train", "train", "sealed"], label: "Sealed test" },
+];
+const cellText: Readonly<Record<Cell, string>> = {
+  empty: "",
+  sealed: "opened once",
+  test: "test",
+  train: "train",
+};
+const BELL_BARS = 15;
+const BELL_CENTER = 7;
+const BELL_SPREAD = 3;
+const BELL_FLOOR = 9;
+const BELL_DENOMINATOR = BELL_SPREAD * BELL_SPREAD + BELL_SPREAD * BELL_SPREAD;
+const TAIL_BARS = 3;
+const FULL_HEIGHT = 100;
+const bell = range(BELL_BARS).map((index) => {
+  const offset = index - BELL_CENTER;
+  const shape = Math.exp(-(offset * offset) / BELL_DENOMINATOR);
+  return Math.round(Math.max(BELL_FLOOR, shape * FULL_HEIGHT));
+});
+---
+
+<section class="section" id="method" aria-labelledby="method-title">
+  <div class="column stack" data-reveal>
+    <SectionHeader
+      id="method-title"
+      number="3"
+      title="Method"
+      lead="Judge each page against its own position on its own site, then test whether the gap is more than bad luck."
+    />
+
+    <LuckBoard />
+
+    <Card tone="tint" size="large">
+      <p class="method__step">Step 1. Expected clicks</p>
+      <p class="method__equation">
+        {terms.map((term, index) => (
+          <>
+            <span class="method__term">
+              <span class="method__term-value">{term.value}</span>
+              <span class="method__term-key">{term.key}</span>
+            </span>
+            <span
+              class:list={[
+                "method__operator",
+                { "method__operator--equals": index === terms.length - 1 },
+              ]}
+              aria-hidden="true"
+            >
+              {index < terms.length - 1 ? "×" : "="}
+            </span>
+          </>
+        ))}
+        <span class="method__term method__term--result">
+          <span class="method__term-value">expected clicks</span>
+          <span class="method__term-key">the yardstick</span>
+        </span>
+      </p>
+      <UnderTheHood>
+        Impressions are how many times the page appeared in Google's results this month. The
+        position click rate is the share of searchers who click a result at that exact position,
+        pooled across every page in the warehouse. The site factor corrects for the fact that some
+        websites are simply clicked more than others at the same position: it is the site's total
+        clicks divided by the clicks its positions predict. Multiplied together, they give the
+        clicks this page should have earned.
+      </UnderTheHood>
+    </Card>
+
+    <Card tone="tint" size="large">
+      <div class="method__head">
+        <p class="method__step">Step 2. Is the gap real?</p>
+        <h3 class="method__title">
+          A page counts as a real shortfall only when it passes both tests in the same month.
+        </h3>
+      </div>
+      <div class="method__gates">
+        <Card as="article" lift size="large">
+          <div class="method__gate">
+            <p class="method__gate-top">
+              <span class="method__chip">
+                <ArrowDownIcon class="method__chip-icon" aria-hidden="true" />
+              </span>
+              <span class="method__step">Test 1: the size of the gap</span>
+            </p>
+            <h4 class="method__gate-head">Clicks are at most half of expected</h4>
+            <div
+              class="method__visual"
+              role="img"
+              aria-label="A bar showing actual clicks reaching less than half of the expected clicks"
+            >
+              <span class="method__expected"></span>
+              <span class="method__actual"></span>
+              <span class="method__half"></span>
+              <span class="method__visual-label method__visual-label--actual">actual</span>
+              <span class="method__visual-label method__visual-label--half">half</span>
+              <span class="method__visual-label method__visual-label--expected">expected</span>
+            </div>
+            <p class="method__gate-body">
+              The page earned half or less of the clicks its position and its own site predict.
+              Smaller gaps are common and usually harmless, so they do not count.
+            </p>
+          </div>
+        </Card>
+        <p class="method__and" aria-hidden="true">
+          <span class="method__and-pill">and</span>
+        </p>
+        <Card as="article" lift size="large">
+          <div class="method__gate">
+            <p class="method__gate-top">
+              <span class="method__chip">
+                <DiceIcon class="method__chip-icon" aria-hidden="true" />
+              </span>
+              <span class="method__step">Test 2: more than bad luck</span>
+            </p>
+            <h4 class="method__gate-head">Luck explains it less than 5% of the time</h4>
+            <div
+              class="method__visual"
+              role="img"
+              aria-label="A bell curve with its lowest 5% tail highlighted"
+            >
+              <span class="method__bell">
+                {bell.map((height, index) => (
+                  <span
+                    class:list={[
+                      "method__bell-bar",
+                      { "method__bell-bar--tail": index < TAIL_BARS },
+                    ]}
+                    style={`height: ${height}%`}
+                  />
+                ))}
+              </span>
+              <span class="method__visual-label method__visual-label--tail">lowest 5%</span>
+            </div>
+            <p class="method__gate-body">
+              A negative binomial test asks how often chance alone would leave the page this far
+              below expected. Clicks swing more than coin-flip maths assumes, so the test uses a
+              spread factor (α = 0.039).
+            </p>
+          </div>
+        </Card>
+      </div>
+      <p class="method__result">
+        <CheckCircleIcon class="method__result-icon" aria-hidden="true" />
+        Pass both and the month counts as a real shortfall. Fail either and the month is treated as
+        normal for that page, even if it looks low.
+      </p>
+    </Card>
+
+    <div class="method__validation">
+      <h3 class="method__validation-title">
+        Step 3. Validation: train on the past, test on the next month, never on the same clients
+      </h3>
+      <div
+        class="method__scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Walk-forward validation grid"
+      >
+        <table class="method__grid" data-scrub>
+          <thead>
+            <tr>
+              <td></td>
+              {months.map((month) => (
+                <th scope="col">{month}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {walkForward.map((row) => (
+              <tr>
+                <th scope="row">{row.label}</th>
+                {row.cells.map((cell) => (
+                  <td
+                    class={`method__cell method__cell--${cell}`}
+                    data-scrub-item={flag(cell !== "empty")}
+                  >
+                    {cell === "sealed" && (
+                      <>
+                        <LockIcon
+                          class="method__cell-icon method__cell-icon--locked"
+                          aria-hidden="true"
+                        />
+                        <LockOpenIcon
+                          class="method__cell-icon method__cell-icon--open"
+                          aria-hidden="true"
+                        />
+                      </>
+                    )}
+                    {cell === "empty" ? (
+                      <span class="visually-hidden">not used</span>
+                    ) : (
+                      cellText[cell]
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <UnderTheHood>
+        Each test month is scored by a model trained only on earlier months, and the clients are
+        also split into five groups, so the model is always tested on websites it never saw while
+        training. Together this mimics real use: next month, on any site. The final month, May to
+        June, stayed sealed and was opened only once, after every choice had been fixed. A model
+        counts as better than rule B only if its top-50 precision is more than 0.02 higher; if the
+        two are closer than that, the share of next month's missed clicks held by the top 50
+        decides.
+      </UnderTheHood>
+    </div>
+  </div>
+</section>
+
+<style>
+  .method__step {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+
+  .method__equation {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: stretch;
+  }
+
+  .method__term {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+  }
+
+  .method__term-value {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  .method__term-key {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    color: var(--ink-2);
+  }
+
+  .method__term--result {
+    color: var(--on-night-2);
+    background-color: var(--night);
+    border-color: var(--night-line);
+
+    .method__term-value {
+      color: var(--on-night);
+    }
+
+    .method__term-key {
+      color: var(--on-night-2);
+    }
+  }
+
+  .method__operator {
+    justify-self: center;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--ink-2);
+  }
+
+  @media (width < 56rem) {
+    .method__equation {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+      gap: 0;
+      padding: var(--space-1);
+      background-color: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-small);
+    }
+
+    .method__term {
+      grid-column: 2;
+      gap: 0.125rem;
+      padding: var(--space-3) var(--space-3) var(--space-3) 0;
+      background-color: transparent;
+      border: 0;
+      border-block-end: 1px solid var(--line);
+      border-radius: 0;
+    }
+
+    .method__term:first-child {
+      grid-column: 1 / -1;
+      padding-inline-start: 2.5rem;
+    }
+
+    .method__operator {
+      display: flex;
+      grid-column: 1;
+      place-self: stretch;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 1.125rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--accent-ink);
+      border-block-end: 1px solid var(--line);
+    }
+
+    .method__operator--equals,
+    .method__term--result {
+      margin-block-start: var(--space-1);
+      background-color: var(--night);
+      border-block-end: 0;
+    }
+
+    .method__operator--equals {
+      color: var(--accent);
+      border-radius: var(--radius-chip) 0 0 var(--radius-chip);
+    }
+
+    .method__term--result {
+      padding-inline-start: var(--space-2);
+      border-radius: 0 var(--radius-chip) var(--radius-chip) 0;
+    }
+  }
+
+  @media (width >= 30rem) and (width < 56rem) {
+    .method__term {
+      flex-flow: row wrap;
+      gap: var(--space-1) var(--space-4);
+      align-items: baseline;
+      justify-content: space-between;
+    }
+  }
+
+  .method__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .method__title {
+    font-size: var(--text-figure-title);
+    line-height: 1.3;
+  }
+
+  .method__gates {
+    display: grid;
+    gap: var(--space-3);
+    align-items: stretch;
+  }
+
+  .method__gate {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  @media (width >= 40rem) and (width < 48rem) {
+    .method__gate {
+      grid-template:
+        "top visual" auto
+        "head visual" auto
+        "body visual" 1fr
+        / minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: var(--space-3) var(--space-6);
+      align-items: start;
+    }
+
+    .method__gate-top {
+      grid-area: top;
+    }
+
+    .method__gate-head {
+      grid-area: head;
+    }
+
+    .method__gate-body {
+      grid-area: body;
+    }
+
+    .method__visual {
+      grid-area: visual;
+      align-self: center;
+      height: 5.5rem;
+    }
+  }
+
+  .method__gate-top {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .method__chip {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+    border-radius: var(--radius-chip);
+  }
+
+  .method__chip-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .method__gate-head {
+    font-size: var(--text-figure-title);
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  .method__gate-body {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--ink-body);
+  }
+
+  .method__visual {
+    position: relative;
+    height: 4rem;
+    background-color: var(--bg-alt);
+    border-radius: 0.875rem;
+  }
+
+  .method__expected,
+  .method__actual {
+    position: absolute;
+    inset-block-start: 1.25rem;
+    inset-inline-start: 7%;
+    height: 0.625rem;
+    border-radius: 5px;
+  }
+
+  .method__expected {
+    width: 86%;
+    background-color: var(--line);
+  }
+
+  .method__actual {
+    width: 33%;
+    background-color: var(--ink);
+  }
+
+  .method__half {
+    position: absolute;
+    inset-block-start: 1rem;
+    inset-inline-start: 50%;
+    width: 2px;
+    height: 1.125rem;
+    background-color: var(--data-b);
+    border-radius: 1px;
+  }
+
+  .method__visual-label {
+    position: absolute;
+    inset-block-end: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--ink-2);
+  }
+
+  .method__visual-label--actual {
+    inset-inline-start: 7%;
+  }
+
+  .method__visual-label--half {
+    inset-inline-start: 50%;
+    translate: -50% 0;
+  }
+
+  .method__visual-label--expected {
+    inset-inline-end: 7%;
+  }
+
+  .method__visual-label--tail {
+    inset-inline-start: 7%;
+  }
+
+  .method__bell {
+    position: absolute;
+    inset-block: 0.5rem 1.5rem;
+    inset-inline: 7%;
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+  }
+
+  .method__bell-bar {
+    flex: 1;
+    background-color: var(--line);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .method__bell-bar--tail {
+    background-color: var(--data-b);
+  }
+
+  .method__and {
+    display: grid;
+    place-items: center;
+    margin: 0;
+  }
+
+  .method__and-pill {
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--on-data-a);
+    background-color: var(--data-a);
+    border-radius: var(--radius-pill);
+  }
+
+  .method__result {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+  }
+
+  .method__result-icon {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-block-start: 0.125rem;
+    color: var(--accent-ink);
+  }
+
+  .method__validation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .method__validation-title {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .method__scroll {
+    position: relative;
+    overflow-x: auto;
+  }
+
+  .method__grid {
+    width: 100%;
+    min-width: 30rem;
+    font-size: 0.8125rem;
+    border-spacing: var(--space-2);
+    border-collapse: separate;
+
+    th {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--ink-2);
+    }
+
+    tbody th {
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--ink);
+      text-align: start;
+    }
+  }
+
+  .method__cell {
+    height: 2.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: center;
+    border-radius: var(--radius-chip);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out;
+  }
+
+  .method__cell--empty {
+    border: 1px solid var(--line);
+  }
+
+  .method__cell--train {
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+  }
+
+  .method__cell--test {
+    color: var(--on-data-a);
+    background-color: var(--data-a);
+  }
+
+  .method__cell--sealed {
+    color: var(--on-night);
+    background-color: var(--night);
+  }
+
+  .method__cell-icon {
+    display: inline-block;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-inline-end: var(--space-1);
+    vertical-align: -0.1875rem;
+    color: var(--accent);
+  }
+
+  @media (width >= 56rem) {
+    .method__equation {
+      grid-template-columns:
+        minmax(max-content, 1fr) auto minmax(max-content, 1fr) auto minmax(max-content, 1fr)
+        auto minmax(max-content, 1fr);
+      align-items: stretch;
+    }
+
+    .method__operator {
+      align-self: center;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .method__gates {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+  }
+
+  @media (width < 48rem) {
+    .method__and {
+      justify-self: center;
+    }
+  }
+
+  .method__cell[data-off] {
+    opacity: 0.18;
+    transform: scale(0.92);
+  }
+
+  .method__cell-icon--locked {
+    display: none;
+  }
+
+  :global(html.js) .method__grid:not([data-complete]) .method__cell-icon--locked {
+    display: inline-block;
+  }
+
+  :global(html.js) .method__grid:not([data-complete]) .method__cell-icon--open {
+    display: none;
+  }
+</style>

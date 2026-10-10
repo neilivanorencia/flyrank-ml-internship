@@ -1,0 +1,108 @@
+---
+import ScalesIcon from "@phosphor-icons/core/assets/regular/scales.svg";
+
+import ModelVsRule from "@/charts/model-vs-rule.astro";
+import Persistence from "@/charts/persistence.astro";
+import Card from "@/components/card.astro";
+import SectionHeader from "@/components/section-header.astro";
+---
+
+<section class="section" id="results" aria-labelledby="results-title">
+  <div class="column stack" data-reveal>
+    <SectionHeader
+      id="results-title"
+      number="4"
+      title="Results"
+      lead="Shortfalls persist. At the top of the list, a simple rule matches the model."
+    />
+    <p>
+      Real shortfalls persist. Among pages with 1,000 to 9,999 impressions, a page short in one
+      month was short again the next month 28% to 51% of the time, against 6% to 13% for pages that
+      were not.
+    </p>
+    <Persistence
+      title="A shortfall this month predicts one next month, in every pair"
+      subtitle="Share short again in month M+1, pages with 1,000 to 9,999 impressions"
+      caption="Fig. 2. In every month pair, pages that were short this month were short again next month far more often than pages that were not: between 3.8 and 4.8 times as often, including the sealed month. This persistence is what makes a monthly review list worth having."
+    />
+    <p>
+      On the sealed month, the model's top-50 precision was 0.94 against rule B's 0.92. The gap of
+      0.02 sits inside the margin fixed in advance, so the second criterion decided: how much of
+      next month's missed clicks the top 50 holds.
+    </p>
+    <ModelVsRule
+      title="The model leads on hits, but never clear of chance. The rule leads on clicks, clearly."
+      subtitle="Model minus rule B, 95% intervals from 1,000 client-level bootstrap resamples"
+      caption="Fig. 3. Each dot is the model's lead over rule B in one test month, and the line around it is the range that 1,000 resamples of the clients keep 95% of the time. Every precision range crosses zero, so none of the model's leads in finding real shortfalls is clear of chance. Every capture range sits left of zero, so the rule's lead in holding next month's missed clicks is clear."
+    />
+    <Card tone="wash" size="large">
+      <div class="results__verdict">
+        <ScalesIcon class="results__verdict-icon" aria-hidden="true" />
+        <div class="results__verdict-text">
+          <p class="results__verdict-title">
+            By the rule fixed before the test, the model did not beat rule B.
+          </p>
+          <p class="results__verdict-body">
+            Both find real shortfalls at the top. The rule points at bigger click pools; the model
+            orders the rest of the list far better (ROC-AUC 0.915 against 0.711).
+          </p>
+        </div>
+      </div>
+    </Card>
+  </div>
+</section>
+
+<style>
+  .results__verdict {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .results__verdict-icon {
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--accent-ink);
+  }
+
+  .results__verdict-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .results__verdict-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .results__verdict-body {
+    font-size: var(--text-label);
+    line-height: 1.55;
+    color: var(--ink-body);
+  }
+
+  @media (width < 40rem) {
+    .results__verdict {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: center;
+    }
+
+    .results__verdict-text {
+      display: contents;
+    }
+
+    .results__verdict-title {
+      line-height: 1.4;
+    }
+
+    .results__verdict-body {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

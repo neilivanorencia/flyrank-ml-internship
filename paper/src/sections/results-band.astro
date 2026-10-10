@@ -1,0 +1,109 @@
+---
+import FiftyPicks from "@/charts/fifty-picks.astro";
+import { formatOne, formatThree, percentText, wholePercentText } from "@/charts/scales.ts";
+import FactStrip from "@/components/fact-strip.astro";
+import persistence from "@/data/persistence.json";
+import queueTradeoff from "@/data/queue-tradeoff.json";
+import sealedMonth from "@/data/sealed-month.json";
+import type { PersistenceRow, QueueRow, SealedRow } from "@/data/types";
+
+const sealedPersistence = (persistence as readonly PersistenceRow[]).find((row) => row.sealed);
+const rule = (sealedMonth as readonly SealedRow[]).find((row) => row.scorer.startsWith("Rule B"));
+const model = (sealedMonth as readonly SealedRow[]).find((row) =>
+  row.scorer.includes("unseen clients")
+);
+const chosen = (queueTradeoff as readonly QueueRow[]).find((row) => row.chosen);
+if (
+  sealedPersistence === undefined ||
+  rule === undefined ||
+  model === undefined ||
+  chosen === undefined
+) {
+  throw new Error("A headline number is missing from the data files.");
+}
+
+const stats = [
+  {
+    label:
+      "A page short this month was 4.8 times as likely to be short next month, on the sealed month too.",
+    value: `${formatOne(sealedPersistence.ratio)}×`,
+  },
+  {
+    label: "Share of June's missed clicks in the top 50: the rule found the bigger click pools.",
+    value: `${percentText(rule.captureAt50Pct)} vs ${percentText(model.captureAt50Pct)}`,
+  },
+  {
+    label: "Ranking quality of the whole list (ROC-AUC): the model orders the rest far better.",
+    value: `${formatThree(model.rocAuc)} vs ${formatThree(rule.rocAuc)}`,
+  },
+  {
+    label: "Review-list pages nobody touched that were still short a month later (16 of 17).",
+    value: wholePercentText(chosen.hitUntouchedPct),
+  },
+] as const;
+---
+
+<section class="results-band" aria-labelledby="results-band-title">
+  <div class="results-band__inner wide">
+    <div class="results-band__top">
+      <div class="results-band__copy" data-reveal>
+        <h2 class="results-band__headline" id="results-band-title">
+          On the sealed month, the rule and the model tied at the top.
+        </h2>
+        <p class="results-band__sub">
+          Out of 50 picks each, both found 46 to 47 pages with a real shortfall. Random picks would
+          find about one.
+        </p>
+      </div>
+      <FiftyPicks caption="Filled square: a pick that had a real shortfall in June. Base rate 2.2%, sealed month May to June 2026, 137,275 pages." />
+    </div>
+    <FactStrip variant="stat" items={stats} />
+  </div>
+</section>
+
+<style>
+  .results-band {
+    padding-block: clamp(4rem, 3rem + 4vw, 6.5rem);
+    background:
+      radial-gradient(ellipse 140% 180% at 20% 0%, var(--mint-band-glow), transparent),
+      var(--mint-band-bg);
+  }
+
+  .results-band__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .results-band__top {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .results-band__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .results-band__headline {
+    font-size: var(--text-band);
+    line-height: 1.1;
+    color: var(--band-ink);
+    letter-spacing: -0.035em;
+  }
+
+  .results-band__sub {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: var(--band-ink-2);
+  }
+
+  @media (width >= 64rem) {
+    .results-band__top {
+      grid-template-columns: minmax(0, 27.5rem) minmax(0, 1fr);
+      gap: var(--space-8);
+      align-items: center;
+    }
+  }
+</style>
